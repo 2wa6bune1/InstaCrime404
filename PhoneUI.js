@@ -1,40 +1,32 @@
 // ======================================================
-// PhoneUI 클래스
-// 
-// 역할:
-// 1. 핸드폰 프레임 그리기
-// 2. 핸드폰 확대/축소 애니메이션
-// 3. 홈 버튼 클릭 처리
-// 4. 마우스 좌표를 핸드폰/앱 내부 좌표로 변환
-// 5. InstagramUI 객체를 내부에 가지고 있음
-// 6. 마우스 휠 입력을 InstagramUI에 전달
+// PhoneUI.js
 // ======================================================
-
 class PhoneUI {
   constructor() {
     this.w = 430;
     this.h = 780;
-
     this.appX = 20;
     this.appY = 40;
     this.appW = 390;
     this.appH = 700;
 
-    this.scale = 1;
-    this.targetScale = 1;
-
-    this.expanded = true;
+    this.expanded = false; 
+    this.scale = 0.4; 
+    this.targetScale = 0.4; 
+    
+    this.flipProgress = 0; 
+    this.targetFlipProgress = 0;
 
     this.bigX = width / 2;
     this.bigY = height / 2;
-
-    this.smallX = width - 145;
+    
+    this.smallX = width / 2;
     this.smallY = height - 160;
 
-    this.x = this.bigX;
-    this.y = this.bigY;
-    this.targetX = this.bigX;
-    this.targetY = this.bigY;
+    this.x = this.smallX; 
+    this.y = this.smallY; 
+    this.targetX = this.smallX; 
+    this.targetY = this.smallY; 
 
     this.instagram = new InstagramUI(this.appW, this.appH);
   }
@@ -43,51 +35,89 @@ class PhoneUI {
     this.scale = lerp(this.scale, this.targetScale, 0.12);
     this.x = lerp(this.x, this.targetX, 0.12);
     this.y = lerp(this.y, this.targetY, 0.12);
-
-    this.instagram.update();
+    this.flipProgress = lerp(this.flipProgress, this.targetFlipProgress, 0.12);
+    
+    let appMouse = this.getAppLocalMouse() || { x: -999, y: -999 };
+    this.instagram.update(appMouse);
   }
 
   display() {
     push();
-
     translate(this.x, this.y);
     scale(this.scale);
+
+    let angleRot = lerp(0.2, 0, this.flipProgress);
+    rotate(angleRot);
+
+    let flipAngle = map(this.flipProgress, 0, 1, PI, 0);
+    let flipScale = cos(flipAngle);
+    scale(abs(flipScale), 1); 
+    
     translate(-this.w / 2, -this.h / 2);
 
-    this.displayFrame();
+    let isPhoneHovered = !this.expanded && this.isMouseInsidePhone();
 
-    push();
+    if (this.flipProgress < 0.5) {
+      this.displayPhoneBack(isPhoneHovered);
+    } else {
+      this.displayFrame();
 
-    drawingContext.save();
-    this.createRoundedClip(this.appX, this.appY, this.appW, this.appH, 26);
+      push();
+      drawingContext.save();
+      this.createRoundedClip(this.appX, this.appY, this.appW, this.appH, 26);
+      translate(this.appX, this.appY);
+      
+      let appMouse = this.getAppLocalMouse() || { x: -999, y: -999 };
+      this.instagram.display(appMouse);
 
-    translate(this.appX, this.appY);
-    this.instagram.display();
-
-    drawingContext.restore();
-
+      drawingContext.restore();
+      pop();
+      
+      this.displayHomeButton();
+    }
     pop();
+  }
 
-    this.displayHomeButton();
+  displayPhoneBack(isHover) {
+    noStroke();
+    fill(0, 70);
+    rect(10, 12, this.w, this.h, 45);
+    
+    fill(35);
+    if (isHover) {
+      let glow = 150 + sin(frameCount * 0.1) * 105;
+      stroke(glow, glow, 255);
+      strokeWeight(8);
+    }
+    rect(0, 0, this.w, this.h, 45);
+    noStroke(); 
 
-    pop();
+    fill(20);
+    rect(30, 30, 150, 160, 35);
+    fill(5);
+    circle(75, 75, 50);
+    circle(75, 145, 50);
+    circle(140, 110, 40);
+    fill(25);
+    circle(75, 75, 30);
+    circle(75, 145, 30);
+    circle(140, 110, 20);
+    fill(200, 200, 150);
+    circle(140, 60, 15);
+    fill(55);
+    circle(this.w / 2, this.h / 2 - 20, 60);
   }
 
   displayFrame() {
     noStroke();
-
     fill(0, 70);
     rect(10, 12, this.w, this.h, 45);
-
     fill(20);
     rect(0, 0, this.w, this.h, 45);
-
     fill(245);
     rect(this.appX, this.appY, this.appW, this.appH, 26);
-
     fill(5);
     rect(this.w / 2 - 60, 12, 120, 25, 15);
-
     fill(50);
     circle(this.w / 2 + 40, 24, 9);
   }
@@ -97,134 +127,93 @@ class PhoneUI {
     stroke(80);
     strokeWeight(2);
     circle(this.w / 2, this.h - 22, 34);
-
-    noStroke();
-    fill(180);
-    textAlign(CENTER);
-    textStyle(NORMAL);
-    textSize(10);
-
-    if (this.expanded) {
-      text("MINI", this.w / 2, this.h - 18);
-    } else {
-      text("OPEN", this.w / 2, this.h - 18);
-    }
-
     strokeWeight(1);
-  }
-
-  displayMiniGuide() {
-    fill(255, 240);
-    noStroke();
-    rect(width - 305, height - 85, 265, 42, 14);
-
-    fill(30);
-    textAlign(CENTER);
-    textStyle(BOLD);
-    textSize(14);
-    text("작아진 핸드폰을 클릭하면 다시 열림", width - 172, height - 59);
   }
 
   handleMousePressed() {
     let phoneMouse = this.getPhoneLocalMouse();
+    if (phoneMouse === null) return false; 
 
-    if (!this.expanded && this.isMouseInsidePhone()) {
+    if (!this.expanded) {
       this.expand();
-      return;
+      return true; 
     }
 
-    if (phoneMouse !== null && this.isHomeButtonClicked(phoneMouse.x, phoneMouse.y)) {
-      this.toggleSize();
-      return;
+    if (this.isHomeButtonClicked(phoneMouse.x, phoneMouse.y)) {
+      this.minimize();
+      return true; 
     }
 
     if (this.expanded) {
       let appMouse = this.getAppLocalMouse();
-
       if (appMouse !== null) {
         this.instagram.handleClick(appMouse.x, appMouse.y);
       }
     }
+    return true; 
   }
 
-  handleMouseWheel(delta) {
-    // 핸드폰이 커져 있고, 마우스가 앱 화면 안에 있을 때만 피드 스크롤
-    if (!this.expanded) {
-      return;
-    }
-
+  handleMouseWheel(event) {
+    if (!this.expanded) return;
     let appMouse = this.getAppLocalMouse();
-
     if (appMouse !== null) {
-      this.instagram.handleWheel(delta);
-    }
-  }
-
-  toggleSize() {
-    if (this.expanded) {
-      this.minimize();
-    } else {
-      this.expand();
+      this.instagram.handleWheel(event);
     }
   }
 
   minimize() {
     this.expanded = false;
-
-    this.targetScale = 0.35;
+    this.targetScale = 0.4; 
+    this.targetFlipProgress = 0; 
     this.targetX = this.smallX;
     this.targetY = this.smallY;
+    
+    // --- 추가: 폰을 엎어놓으면 스토리에서 빠져나와 피드로 초기화 ---
+    this.instagram.currentScreen = "feed"; 
   }
 
   expand() {
     this.expanded = true;
-
     this.targetScale = 1;
+    this.targetFlipProgress = 1; 
     this.targetX = this.bigX;
     this.targetY = this.bigY;
   }
 
   getPhoneLocalMouse() {
-    let localX = (mouseX - this.x) / this.scale + this.w / 2;
-    let localY = (mouseY - this.y) / this.scale + this.h / 2;
+    if (this.flipProgress > 0.05 && this.flipProgress < 0.95) return null;
 
-    if (
-      localX >= 0 &&
-      localX <= this.w &&
-      localY >= 0 &&
-      localY <= this.h
-    ) {
-      return {
-        x: localX,
-        y: localY
-      };
+    let localX = (mouseX - this.x) / this.scale;
+    let localY = (mouseY - this.y) / this.scale;
+
+    let angleRot = lerp(0.2, 0, this.flipProgress);
+    let rotX = localX * cos(-angleRot) - localY * sin(-angleRot);
+    let rotY = localX * sin(-angleRot) + localY * cos(-angleRot);
+
+    let flipAngle = map(this.flipProgress, 0, 1, PI, 0);
+    let flipScale = abs(cos(flipAngle));
+    if (flipScale < 0.01) flipScale = 0.01;
+    
+    let scaleX = rotX / flipScale;
+    let scaleY = rotY;
+
+    let finalX = scaleX + this.w / 2;
+    let finalY = scaleY + this.h / 2;
+
+    if (finalX >= 0 && finalX <= this.w && finalY >= 0 && finalY <= this.h) {
+      return { x: finalX, y: finalY };
     }
-
     return null;
   }
 
   getAppLocalMouse() {
     let phoneMouse = this.getPhoneLocalMouse();
-
-    if (phoneMouse === null) {
-      return null;
-    }
-
+    if (phoneMouse === null) return null;
     let appLocalX = phoneMouse.x - this.appX;
     let appLocalY = phoneMouse.y - this.appY;
-
-    if (
-      appLocalX >= 0 &&
-      appLocalX <= this.appW &&
-      appLocalY >= 0 &&
-      appLocalY <= this.appH
-    ) {
-      return {
-        x: appLocalX,
-        y: appLocalY
-      };
+    if (appLocalX >= 0 && appLocalX <= this.appW && appLocalY >= 0 && appLocalY <= this.appH) {
+      return { x: appLocalX, y: appLocalY };
     }
-
     return null;
   }
 
@@ -235,28 +224,20 @@ class PhoneUI {
   isHomeButtonClicked(px, py) {
     let homeX = this.w / 2;
     let homeY = this.h - 22;
-
-    let d = dist(px, py, homeX, homeY);
-
-    return d < 24;
+    return dist(px, py, homeX, homeY) < 24;
   }
 
   createRoundedClip(x, y, w, h, r) {
     drawingContext.beginPath();
-
     drawingContext.moveTo(x + r, y);
     drawingContext.lineTo(x + w - r, y);
     drawingContext.quadraticCurveTo(x + w, y, x + w, y + r);
-
     drawingContext.lineTo(x + w, y + h - r);
     drawingContext.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-
     drawingContext.lineTo(x + r, y + h);
     drawingContext.quadraticCurveTo(x, y + h, x, y + h - r);
-
     drawingContext.lineTo(x, y + r);
     drawingContext.quadraticCurveTo(x, y, x + r, y);
-
     drawingContext.closePath();
     drawingContext.clip();
   }

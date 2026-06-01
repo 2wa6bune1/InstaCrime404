@@ -1,37 +1,39 @@
 // ======================================================
-// Story 클래스
-// 
-// 스토리 하나의 데이터를 저장하고,
-// 스토리 아이콘을 그리는 역할.
+// story.js
 // ======================================================
-
 class Story {
-  constructor(name, color1, color2, bg, text) {
+  constructor(name, color1, color2, bg, text, img = null) {
     this.name = name;
     this.color1 = color1;
     this.color2 = color2;
     this.bg = bg;
     this.text = text;
+    this.img = img;
+    this.isRead = false; 
   }
 
   displayIcon(x, y) {
     noFill();
     strokeWeight(4);
 
-    stroke(this.color1);
-    arc(x, y, 64, 64, PI, TWO_PI);
-
-    stroke(this.color2);
-    arc(x, y, 64, 64, 0, PI);
+    if (!this.isRead) {
+      stroke(this.color1);
+      arc(x, y, 64, 64, PI, TWO_PI);
+      stroke(this.color2);
+      arc(x, y, 64, 64, 0, PI);
+    } else {
+      stroke(80); 
+      circle(x, y, 64);
+    }
 
     noStroke();
-    fill(255);
+    fill(40); 
     circle(x, y, 56);
 
-    fill(230);
+    fill(60); 
     circle(x, y, 48);
 
-    fill(100);
+    fill(150); 
     circle(x, y - 5, 14);
     ellipse(x, y + 13, 28, 22);
 

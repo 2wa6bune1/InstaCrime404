@@ -1,47 +1,88 @@
 // ======================================================
 // sketch.js
-// 전체 게임 실행을 담당하는 파일
-// 
-// 인스타 UI와 핸드폰 확대/축소 기능은 클래스로 분리함.
-// 게시물 피드는 마우스 휠로 스크롤 가능.
 // ======================================================
-
 let phone;
+let dateManager;
+let room;
+
+let gameState = "START"; 
+
+let imgPost1, imgStory1; 
+
+function preload() {
+  // imgPost1 = loadImage('assets/post1.png');
+  // imgStory1 = loadImage('assets/story1.png');
+}
 
 function setup() {
   createCanvas(900, 800);
   textFont("Arial");
 
-  phone = new PhoneUI();
+  room = new Room();
+  dateManager = new DateManager();
+  phone = new PhoneUI(); 
+  
+  dateManager.loadDailyData(); 
 }
 
 function draw() {
- background(255)
+  if (gameState === "START") {
+    background(20);
+    fill(255);
+    textAlign(CENTER, CENTER);
+    textSize(40);
+    textStyle(BOLD);
+    text("MYSTERY GAME", width/2, height/3 - 30);
 
-  phone.update();
-  phone.display();
+    fill(200, 40, 60);
+    noStroke();
+    rect(width/2 - 100, height/2 - 20, 200, 60, 15);
+    
+    fill(255);
+    textSize(24);
+    textStyle(NORMAL);
+    text("게임 시작하기", width/2, height/2 + 10);
+  } else {
+    let currentStories = phone.instagram.stories;
+    if (currentStories.length === 0 || currentStories.every(s => s.isRead === true)) {
+      room.goNextDay = true;
+    } else {
+      room.goNextDay = false;
+    }
 
-  if (!phone.expanded) {
-    phone.displayMiniGuide();
+    room.display();
+    phone.update();
+    phone.display();
+
+    if (!phone.expanded) {
+      room.displayNextDayButton();
+    }
   }
 }
 
 function mousePressed() {
-  phone.handleMousePressed();
+  if (gameState === "START") {
+    if (mouseX > width/2 - 100 && mouseX < width/2 + 100 && mouseY > height/2 - 20 && mouseY < height/2 + 40) {
+      gameState = "PLAY";
+    }
+    return;
+  }
+
+  // --- 💡 핸드폰 밖의 여백(배경)을 누르면 폰이 엎어집니다 ---
+  let phoneClicked = phone.handleMousePressed(); 
+  
+  if (!phoneClicked) {
+    if (phone.expanded) {
+      phone.minimize(); // 폰 닫기 (주인공 방 복귀)
+    } else {
+      room.checkClick(mouseX, mouseY); // 방의 다른 요소(다음날 버튼 등) 클릭
+    }
+  }
 }
 
-// 마우스 휠 입력 처리
-// event.delta가 양수면 아래로 휠, 음수면 위로 휠
 function mouseWheel(event) {
-  phone.handleMouseWheel(event.delta);
-
-  // 브라우저 페이지 자체가 스크롤되는 것을 막음
+  if (gameState === "PLAY") {
+    phone.handleMouseWheel(event);
+  }
   return false;
 }
-
-// ======================================================
-// 게임 배경 화면
-// 현재는 클래스로 분리하지 않고 sketch.js에 유지.
-// ======================================================
-
-

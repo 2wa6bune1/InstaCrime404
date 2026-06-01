@@ -1,353 +1,685 @@
 // ======================================================
-// InstagramUI 클래스
-// 
-// 역할:
-// 1. 인스타그램풍 피드 화면 출력
-// 2. 게시물 피드 스크롤
-// 3. 스토리 화면 출력
-// 4. 피드/스토리 화면 전환
-// 5. 좋아요 클릭 처리
+// instagramUI.js
 // ======================================================
-
 class InstagramUI {
   constructor(w, h) {
     this.w = w;
     this.h = h;
-
     this.currentScreen = "feed";
     this.currentStory = 0;
-
-    // 피드 스크롤 관련 변수
     this.scrollY = 0;
     this.targetScrollY = 0;
-
-    // 화면 고정 영역
+    this.storyScrollX = 0;
+    this.targetStoryScrollX = 0;
+    this.isDraggingStory = false;
+    this.wasMousePressed = false;
+    this.dragDistance = 0; 
     this.headerH = 65;
     this.storiesH = 105;
     this.bottomNavH = 58;
-
-    // 게시물 시작 위치
     this.postStartY = 185;
-
-    // 게시물 하나의 높이
     this.postGap = 420;
+    this.isTransitioning = false;
+    this.transitionProgress = 0;
+    this.nextStoryIndex = 0;
+    this.stories = [];
+    this.posts = [];
+    this.storyGroups = []; 
 
-    this.stories = [
-      new Story(
-        "me",
-        color(255, 120, 80),
-        color(255, 210, 90),
-        color(255, 150, 120),
-        "오늘의 미션"
-      ),
-      new Story(
-        "npc_01",
-        color(180, 80, 255),
-        color(255, 80, 150),
-        color(120, 90, 220),
-        "새로운 단서 발견"
-      ),
-      new Story(
-        "shop",
-        color(255, 220, 80),
-        color(255, 80, 180),
-        color(255, 190, 80),
-        "아이템 세일 중"
-      ),
-      new Story(
-        "rival",
-        color(80, 200, 255),
-        color(180, 80, 255),
-        color(80, 160, 220),
-        "라이벌의 게시물"
-      )
-    ];
+    this.storyDuration = 5000; 
+    this.storyElapsedTime = 0; 
+    this.isStoryPaused = false;
+    this.wasStoryPressed = false;
+    this.lastPressedX = 0;
+    this.lastPressedY = 0;
+    this.ignorePress = false; 
 
-    this.posts = [
-      new Post(
-        "npc_01",
-        "Seongsu Quest Zone",
-        "오늘도 플레이어를 기다리는 중...",
-        128,
-        color(240, 180, 130)
-      ),
-      new Post(
-        "shop_master",
-        "Item Store",
-        "새로운 장비가 입고되었습니다.",
-        342,
-        color(140, 190, 230)
-      ),
-      new Post(
-        "rival",
-        "Back Alley",
-        "플레이어보다 먼저 단서를 찾았다.",
-        221,
-        color(170, 130, 220)
-      ),
-      new Post(
-        "quest_bot",
-        "Main Quest",
-        "오늘의 미션이 업데이트되었습니다.",
-        76,
-        color(130, 210, 170)
-      )
-    ];
+    // --- 💡 새로고침 및 여백 상호작용 변수 추가 ---
+    this.isRefreshing = false;
+    this.refreshTimer = 0;
+    this.refreshThreshold = -70; // 이 좌표(px)보다 더 당기면 새로고침 발동
+
+    this.storyBuffer = createGraphics(this.w, this.h);
+    this.storyBuffer2 = createGraphics(this.w, this.h);
+    this.webglBuffer = createGraphics(this.w, this.h, WEBGL);
   }
 
-  update() {
-    // 스크롤도 부드럽게 움직이게 함
-    this.scrollY = lerp(this.scrollY, this.targetScrollY, 0.25);
+  loadData(storiesData, postsData) {
+    this.stories = storiesData;
+    this.posts = postsData;
+    this.currentScreen = "feed";
+    this.currentStory = 0;
+    this.scrollY = 0;
+    this.targetScrollY = 0;
+    this.storyScrollX = 0;
+    this.targetStoryScrollX = 0;
+    this.storyElapsedTime = 0;
+    this.ignorePress = false;
+    this.isRefreshing = false;
+
+    this.storyGroups = [];
+    for (let i = 0; i < this.stories.length; i++) {
+      let s = this.stories[i];
+      let existingGroup = this.storyGroups.find(g => g.name === s.name);
+      if (!existingGroup) {
+        this.storyGroups.push({ name: s.name, firstIndex: i });
+      }
+    }
   }
 
-  display() {
-    fill(245);
+  update(appMouse) {
+    let maxScroll = this.getMaxScroll();
+
+    // --- 💡 고무줄 복원 물리: 경계를 넘어간 스크롤을 원래대로 부드럽게 당김 ---
+    if (this.targetScrollY < 0) {
+      this.targetScrollY = lerp(this.targetScrollY, 0, 0.15);
+    } else if (this.targetScrollY > maxScroll) {
+      this.targetScrollY = lerp(this.targetScrollY, maxScroll, 0.15);
+    }
+    
+    // 세로 피드 드래그(스크롤) 처리
+    if (mouseIsPressed && !this.isDraggingStory && this.currentScreen === "feed") {
+      let scaleFactor = (typeof phone !== 'undefined') ? phone.scale : 1;
+      let dy = movedY / scaleFactor;
+
+      // 경계를 넘어갈 때 마우스 드래그에 묵직한 저항(0.3)을 줍니다
+      if (this.targetScrollY < 0 && dy > 0) dy *= 0.3;
+      if (this.targetScrollY > maxScroll && dy < 0) dy *= 0.3;
+
+      if (!this.wasMousePressed) {
+        // 드래그가 피드 영역 본문(Y > 170)에서 일어날 때만 세로 스크롤 적용
+        if (appMouse && appMouse.y > 170) this.isDraggingVertical = true;
+      }
+
+      if (this.isDraggingVertical) {
+        this.targetScrollY -= dy;
+        // 무한정 늘어나지 않도록 최대 여백 한계선 세팅 (-130px ~ max+130px)
+        this.targetScrollY = constrain(this.targetScrollY, -130, maxScroll + 130);
+      }
+    } else {
+      this.isDraggingVertical = false;
+    }
+
+    this.scrollY = lerp(this.scrollY, this.targetScrollY, 0.22);
+    
+    // --- 💡 새로고침 트리거 조건문 ---
+    if (this.scrollY < this.refreshThreshold && !this.isRefreshing) {
+      this.isRefreshing = true;
+      this.refreshTimer = frameCount; // 재생 시간 측정용
+      
+      // 여기에 나중에 새로고침 시 데이터가 무작위로 섞이거나 글리치가 일어나는 효과를 넣을 수 있습니다!
+      // 예시: dateManager.loadDailyData();
+    }
+
+    // 새로고침 애니메이션 지속 시간 (약 1.5초 후 자동 종료)
+    if (this.isRefreshing && frameCount - this.refreshTimer > 90) {
+      this.isRefreshing = false;
+    }
+
+    // --- 스토리 가로 스크롤 영역 ---
+    let totalStoryIcons = 1 + this.storyGroups.length; 
+    let maxStoryScroll = max(0, 45 + totalStoryIcons * 85 - this.w + 20);
+
+    if (mouseIsPressed && !this.wasMousePressed) {
+      this.dragDistance = 0;
+      if (appMouse && appMouse.y > 65 && appMouse.y < 170) {
+        this.isDraggingStory = true;
+      }
+    }
+
+    if (mouseIsPressed && this.isDraggingStory) {
+      this.dragDistance += abs(movedX); 
+      let scaleFactor = (typeof phone !== 'undefined') ? phone.scale : 1;
+      this.targetStoryScrollX -= movedX / scaleFactor; 
+    }
+
+    if (!mouseIsPressed) {
+      this.isDraggingStory = false;
+    }
+    
+    this.wasMousePressed = mouseIsPressed;
+    this.targetStoryScrollX = constrain(this.targetStoryScrollX, 0, maxStoryScroll);
+    this.storyScrollX = lerp(this.storyScrollX, this.targetStoryScrollX, 0.2);
+
+    // --- 스토리 타이머 조작 영역 ---
+    if (this.currentScreen === "story") {
+      if (this.isTransitioning) {
+        this.transitionProgress += 0.05; 
+        if (this.transitionProgress >= 1) {
+          this.isTransitioning = false;
+          this.currentStory = this.nextStoryIndex;
+          this.transitionProgress = 0;
+          this.storyElapsedTime = 0; 
+        }
+      } else {
+        let isAppHovered = appMouse && appMouse.x >= 0 && appMouse.x <= this.w && appMouse.y >= 0 && appMouse.y <= this.h;
+        let isPressingStoryArea = mouseIsPressed && isAppHovered && appMouse.y >= 80;
+
+        if (isPressingStoryArea) {
+          if (!this.ignorePress) {
+            this.isStoryPaused = true; 
+            this.wasStoryPressed = true;
+            this.lastPressedX = appMouse.x;
+            this.lastPressedY = appMouse.y;
+          }
+        } else {
+          this.ignorePress = false; 
+          this.isStoryPaused = false; 
+          
+          if (this.wasStoryPressed) {
+            this.checkStoryViewerClick(this.lastPressedX, this.lastPressedY);
+            this.wasStoryPressed = false;
+          }
+        }
+
+        if (!this.isStoryPaused) {
+          this.storyElapsedTime += deltaTime; 
+          if (this.storyElapsedTime >= this.storyDuration) {
+            this.handleAutomaticNext();
+          }
+        }
+      }
+    }
+  }
+
+  handleAutomaticNext() {
+    let prevStory = this.currentStory;
+    this.nextStoryIndex = this.currentStory + 1;
+
+    if (this.nextStoryIndex >= this.stories.length) {
+      this.currentScreen = "feed";
+      this.currentStory = 0;
+      this.storyElapsedTime = 0;
+    } else {
+      if (this.stories[prevStory].name !== this.stories[this.nextStoryIndex].name) {
+        this.isTransitioning = true;
+        this.transitionProgress = 0;
+        this.stories[this.nextStoryIndex].isRead = true; 
+      } else {
+        this.currentStory = this.nextStoryIndex;
+        this.stories[this.currentStory].isRead = true; 
+        this.storyElapsedTime = 0; 
+      }
+    }
+  }
+
+  display(appMouse = {x: -999, y: -999}) {
+    fill(20);
     noStroke();
     rect(0, 0, this.w, this.h, 25);
-
     if (this.currentScreen === "feed") {
-      this.displayFeed();
+      this.displayFeed(appMouse);
     } else if (this.currentScreen === "story") {
       this.displayStoryViewer();
     }
   }
 
-  displayFeed() {
-    // 피드의 스크롤되는 부분
-    this.displayScrollableFeed();
-
-    // 헤더와 하단바는 스크롤되지 않게 마지막에 그림
-    this.displayHeader();
-    this.displayBottomNav();
-
-    // 스크롤바 표시
+  displayFeed(appMouse) {
+    this.displayScrollableFeed(appMouse);
+    this.displayHeader(appMouse); 
+    this.displayBottomNav(appMouse);
     this.displayScrollBar();
   }
 
-  displayScrollableFeed() {
+  displayScrollableFeed(appMouse) {
     push();
-
-    // 헤더 아래, 하단바 위 영역만 피드가 보이게 클리핑
     drawingContext.save();
+    // 상단바와 하단 네비게이션 사이 구역 클리핑
     this.createRectClip(0, this.headerH, this.w, this.h - this.headerH - this.bottomNavH);
+    
+    // --- 💡 새로고침 인디케이터 그리기 ---
+    // 위로 스크롤을 당겨 여백이 생겼을 때만 노출
+    if (this.scrollY < 0) {
+      push();
+      translate(this.w / 2, this.headerH + 30); 
+      stroke(150, 200, 255);
+      strokeWeight(2.5);
+      noFill();
+      
+      // 새로고침 로딩 중일 때는 계속 돌고, 당기는 중일 때는 늘어난 길이에 맞춰 회전각이 변함
+      let spinAngle = this.isRefreshing ? (frameCount * 0.1) : map(this.scrollY, 0, this.refreshThreshold, 0, TWO_PI);
+      rotate(spinAngle);
+      arc(0, 0, 20, 20, 0, PI * 1.5);
+      pop();
+    }
 
-    // 스크롤 적용
     translate(0, -this.scrollY);
-
-    // 스토리 영역과 게시물들이 같이 스크롤됨
-    this.displayStories();
-
-    this.displayPosts();
-
+    
+    let scrolledMouse = { x: appMouse.x, y: appMouse.y + this.scrollY };
+    this.displayStories(scrolledMouse);
+    this.displayPosts(scrolledMouse);
+    
     drawingContext.restore();
-
     pop();
   }
 
-  displayHeader() {
-    fill(255);
+  displayHeader(appMouse) {
+    fill(30);
     noStroke();
     rect(0, 0, this.w, 65, 25, 25, 0, 0);
-
-    fill(0);
+    
+    fill(255);
     textSize(25);
     textStyle(BOLD);
-    textAlign(LEFT);
+    textAlign(LEFT, BASELINE);
     text("Instagram", 18, 42);
+    
+    let headerY = 32;
+    let isHeartHover = appMouse && dist(appMouse.x, appMouse.y, 310, headerY) < 20;
+    let isDmHover = appMouse && dist(appMouse.x, appMouse.y, 355, headerY) < 20;
 
-    textSize(24);
-    textStyle(NORMAL);
-    text("♡", 312, 40);
-    text("✈", 350, 40);
-
-    stroke(220);
+    push();
+    translate(310, headerY);
+    if (isHeartHover) scale(1.2);
+    fill(isHeartHover ? color(255, 150, 150) : 255);
+    noStroke();
+    textAlign(CENTER, CENTER);
+    textSize(26);
+    text("♡", 0, 2); 
+    pop();
+    
+    push();
+    translate(355, headerY); 
+    if (isDmHover) scale(1.2);
+    stroke(isDmHover ? color(150, 200, 255) : 255);
+    strokeWeight(2);
+    noFill();
+    strokeJoin(ROUND);
+    beginShape();
+    vertex(-9, 5); 
+    vertex(8, -8);
+    vertex(4, 9);
+    vertex(-1, 1);
+    endShape(CLOSE);
+    pop();
+    
+    stroke(50);
     line(0, 64, this.w, 64);
   }
 
-  displayStories() {
-    fill(255);
+  displayStories(scrolledMouse) {
+    fill(30);
     noStroke();
     rect(0, 65, this.w, 105);
 
-    for (let i = 0; i < this.stories.length; i++) {
-      let x = 45 + i * 85;
+    push();
+    translate(-this.storyScrollX, 0);
+
+    let localMouseX = scrolledMouse.x + this.storyScrollX;
+    let myX = 45;
+    let myY = 105;
+    let isMyHover = dist(localMouseX, scrolledMouse.y, myX, myY) < 35;
+
+    push();
+    translate(myX, myY);
+    if (isMyHover) scale(1.1);
+
+    noStroke();
+    fill(40); circle(0, 0, 56);
+    fill(60); circle(0, 0, 48);
+    fill(150); circle(0, -5, 14); ellipse(0, 13, 28, 22);
+
+    push();
+    translate(18, 18);
+    fill(50, 150, 255);
+    stroke(30); 
+    strokeWeight(3);
+    circle(0, 0, 20);
+    noStroke();
+    fill(255);
+    rectMode(CENTER);
+    rect(0, 0, 10, 2.5, 1);
+    rect(0, 0, 2.5, 10, 1);
+    pop();
+
+    fill(isMyHover ? 255 : 220);
+    noStroke();
+    textAlign(CENTER, BASELINE);
+    textSize(11);
+    textStyle(NORMAL);
+    text("내 스토리", 0, 48);
+    pop();
+
+    for (let i = 0; i < this.storyGroups.length; i++) {
+      let x = 45 + (i + 1) * 85; 
       let y = 105;
+      let group = this.storyGroups[i];
 
-      this.stories[i].displayIcon(x, y);
+      let isHover = dist(localMouseX, scrolledMouse.y, x, y) < 35;
 
-      fill(30);
+      let isAllRead = true;
+      for (let j = 0; j < this.stories.length; j++) {
+        if (this.stories[j].name === group.name && !this.stories[j].isRead) {
+          isAllRead = false;
+          break;
+        }
+      }
+
+      let firstStory = this.stories[group.firstIndex];
+      let tempRead = firstStory.isRead;
+      firstStory.isRead = isAllRead; 
+
+      push();
+      translate(x, y);
+      if (isHover) scale(1.1); 
+      firstStory.displayIcon(0, 0); 
+      firstStory.isRead = tempRead; 
+
+      fill(isHover ? 255 : 220); 
       noStroke();
-      textAlign(CENTER);
+      textAlign(CENTER, BASELINE);
       textSize(11);
       textStyle(NORMAL);
-      text(this.stories[i].name, x, y + 48);
+      text(group.name, 0, 48);
+      pop();
     }
-
-    stroke(220);
+    
+    pop(); 
+    stroke(50);
     line(0, 170, this.w, 170);
   }
 
-  displayPosts() {
+  displayPosts(scrolledMouse) {
     for (let i = 0; i < this.posts.length; i++) {
       let postY = this.postStartY + i * this.postGap;
-      this.posts[i].display(postY, this.w);
+      this.posts[i].display(postY, this.w, scrolledMouse);
     }
   }
 
-  displayBottomNav() {
-    fill(255);
+  displayBottomNav(appMouse) {
+    fill(30);
     noStroke();
     rect(0, this.h - this.bottomNavH, this.w, this.bottomNavH);
-
-    stroke(220);
+    stroke(50);
     line(0, this.h - this.bottomNavH, this.w, this.h - this.bottomNavH);
 
-    fill(0);
-    noStroke();
-    textAlign(CENTER);
-    textSize(24);
+    let xs = [40, 115, 195, 275, 350];
+    let navY = this.h - (this.bottomNavH / 2); 
 
-    text("⌂", 40, this.h - 22);
-    text("⌕", 115, this.h - 22);
-    text("＋", 195, this.h - 22);
-    text("♡", 275, this.h - 22);
-    text("◉", 350, this.h - 22);
+    for (let i = 0; i < xs.length; i++) {
+      let isHover = appMouse.y > this.h - this.bottomNavH && abs(appMouse.x - xs[i]) < 25;
+
+      push();
+      translate(xs[i], navY);
+      
+      if (isHover) scale(1.2); 
+
+      let iconColor = isHover ? color(150, 200, 255) : color(255);
+      stroke(iconColor);
+      strokeWeight(2);
+      noFill();
+      strokeJoin(ROUND);
+
+      if (i === 0) {
+        beginShape();
+        vertex(-8, 1); vertex(0, -7); vertex(8, 1);
+        vertex(8, 9); vertex(-8, 9);
+        endShape(CLOSE);
+      } else if (i === 1) {
+        rectMode(CENTER);
+        rect(0, 0, 18, 18, 4);
+        fill(iconColor);
+        noStroke();
+        triangle(-2, -4, -2, 4, 4, 0);
+      } else if (i === 2) {
+        beginShape();
+        vertex(-9, 5); 
+        vertex(8, -8);
+        vertex(4, 9);
+        vertex(-1, 1);
+        endShape(CLOSE);
+      } else if (i === 3) {
+        circle(-2, -2, 12);
+        line(2.5, 2.5, 8, 8);
+      } else if (i === 4) {
+        circle(0, 0, 20);
+        fill(iconColor);
+        noStroke();
+        circle(0, -3, 7);
+        arc(0, 6.5, 14, 11, PI, TWO_PI);
+      }
+      pop();
+    }
   }
 
   displayScrollBar() {
     let maxScroll = this.getMaxScroll();
-
-    if (maxScroll <= 0) {
-      return;
-    }
-
+    if (maxScroll <= 0) return;
     let trackTop = this.headerH + 8;
     let trackBottom = this.h - this.bottomNavH - 8;
     let trackH = trackBottom - trackTop;
-
     let barH = max(40, trackH * 0.35);
-    let barY = map(this.scrollY, 0, maxScroll, trackTop, trackBottom - barH);
+    
+    // 오버 스크롤 시 스크롤바 바인딩 보정
+    let barY = map(constrain(this.scrollY, 0, maxScroll), 0, maxScroll, trackTop, trackBottom - barH);
 
     noStroke();
-    fill(0, 70);
+    fill(255, 70); 
     rect(this.w - 8, barY, 4, barH, 10);
   }
 
   displayStoryViewer() {
-    let s = this.stories[this.currentStory];
+    if (!this.isTransitioning) {
+      this.drawStoryToBuffer(this.currentStory, this.storyBuffer);
+      image(this.storyBuffer, 0, 0);
+    } else {
+      this.drawStoryToBuffer(this.currentStory, this.storyBuffer);
+      this.drawStoryToBuffer(this.nextStoryIndex, this.storyBuffer2);
 
-    fill(s.bg);
-    noStroke();
-    rect(0, 0, this.w, this.h, 25);
+      let p = this.transitionProgress;
+      let easeP = p * (2 - p);
+      let dir = (this.nextStoryIndex > this.currentStory) ? 1 : -1;
+      let angle = -easeP * HALF_PI * dir; 
 
-    for (let i = 0; i < this.stories.length; i++) {
-      if (i <= this.currentStory) {
-        fill(255);
+      this.webglBuffer.clear();
+      this.webglBuffer.background(20);
+
+      this.webglBuffer.push();
+      this.webglBuffer.translate(0, 0, -this.w / 2); 
+      this.webglBuffer.rotateY(angle); 
+
+      this.webglBuffer.push();
+      this.webglBuffer.translate(0, 0, this.w / 2);
+      this.webglBuffer.texture(this.storyBuffer);
+      this.webglBuffer.noStroke();
+      this.webglBuffer.plane(this.w, this.h);
+      this.webglBuffer.pop();
+
+      this.webglBuffer.push();
+      if (dir === 1) {
+        this.webglBuffer.translate(this.w / 2, 0, 0);
+        this.webglBuffer.rotateY(HALF_PI); 
       } else {
-        fill(255, 100);
+        this.webglBuffer.translate(-this.w / 2, 0, 0);
+        this.webglBuffer.rotateY(-HALF_PI); 
       }
+      this.webglBuffer.texture(this.storyBuffer2);
+      this.webglBuffer.noStroke();
+      this.webglBuffer.plane(this.w, this.h);
+      this.webglBuffer.pop();
 
-      noStroke();
-      rect(15 + i * 90, 18, 78, 4, 10);
+      this.webglBuffer.pop();
+      image(this.webglBuffer, 0, 0);
+    }
+  }
+
+  drawStoryToBuffer(index, g) {
+    if(this.stories.length === 0) return;
+    let s = this.stories[index];
+    g.clear();
+    
+    if (s.img) {
+      g.image(s.img, 0, 0, this.w, this.h);
+    } else {
+      g.fill(s.bg);
+      g.noStroke();
+      g.rect(0, 0, this.w, this.h, 25);
+      g.fill(255);
+      g.textAlign(CENTER, BASELINE);
+      g.textStyle(BOLD);
+      g.textSize(30);
+      g.text(s.text, this.w / 2, 310);
+      g.textSize(15);
+      g.textStyle(NORMAL);
+      g.text("게임 속 인스타 스토리 화면", this.w / 2, 345);
     }
 
-    fill(255);
-    circle(32, 48, 32);
+    let bottomH = 80;
+    g.fill(35); 
+    g.noStroke();
+    g.rect(0, this.h - bottomH, this.w, bottomH, 0, 0, 25, 25);
 
-    fill(255);
-    textAlign(LEFT);
-    textStyle(BOLD);
-    textSize(14);
-    text(s.name, 55, 53);
+    let userStories = this.stories.filter(story => story.name === s.name);
+    let numStories = userStories.length;
+    let localIndex = userStories.indexOf(s); 
 
-    textStyle(NORMAL);
-    textSize(13);
-    text("2h", 110, 53);
+    let padding = 15;
+    let gap = 4;
+    let totalGapWidth = max(0, (numStories - 1) * gap);
+    let availableWidth = this.w - padding * 2;
+    let barW = (availableWidth - totalGapWidth) / numStories;
 
-    textAlign(RIGHT);
-    textSize(24);
-    text("×", this.w - 22, 55);
+    let currentProgress = 0;
+    if (!this.isTransitioning) {
+      currentProgress = constrain(this.storyElapsedTime / this.storyDuration, 0, 1);
+    } else {
+      currentProgress = (index === this.currentStory) ? 1 : 0;
+    }
 
-    fill(255, 80);
-    noStroke();
-    rect(45, 145, 300, 380, 24);
+    for (let i = 0; i < numStories; i++) {
+      let bx = padding + i * (barW + gap);
+      g.fill(255, 100);
+      g.noStroke();
+      g.rect(bx, 18, barW, 4, 10);
+      
+      g.fill(255);
+      if (i < localIndex) {
+        g.rect(bx, 18, barW, 4, 10);
+      } else if (i === localIndex) {
+        g.rect(bx, 18, barW * currentProgress, 4, 10);
+      }
+    }
 
-    fill(255);
-    textAlign(CENTER);
-    textStyle(BOLD);
-    textSize(30);
-    text(s.text, this.w / 2, 310);
+    g.fill(255);
+    g.circle(32, 48, 32);
+    g.fill(255);
+    g.textAlign(LEFT, BASELINE);
+    g.textStyle(BOLD);
+    g.textSize(14);
+    g.text(s.name, 55, 53);
+    g.textStyle(NORMAL);
+    g.textSize(13);
+    g.text("2h", 110, 53);
+    g.textAlign(RIGHT, BASELINE);
+    g.textSize(24);
+    g.text("×", this.w - 22, 55);
+    
+    g.noFill();
+    g.stroke(255);
+    g.strokeWeight(1.5);
+    g.rect(20, this.h - 60, 270, 40, 20); 
+    
+    g.noStroke();
+    g.fill(255);
+    g.textAlign(LEFT, BASELINE);
+    g.textSize(14);
+    g.text("메시지 보내기", 38, this.h - 35);
+    
+    let storyIconY = this.h - 40;
 
-    textSize(15);
-    textStyle(NORMAL);
-    text("게임 속 인스타 스토리 화면", this.w / 2, 345);
-
-    noFill();
-    stroke(255);
-    strokeWeight(1.5);
-    rect(20, this.h - 65, 270, 40, 20);
-
-    noStroke();
-    fill(255);
-    textAlign(LEFT);
-    textSize(14);
-    text("메시지 보내기", 38, this.h - 40);
-
-    textAlign(CENTER);
-    textSize(24);
-    text("♡", 320, this.h - 38);
-    text("✈", 355, this.h - 38);
-
-    strokeWeight(1);
+    g.push();
+    g.translate(315, storyIconY);
+    g.fill(255);
+    g.noStroke();
+    g.textAlign(CENTER, CENTER);
+    g.textSize(26);
+    g.text("♡", 0, 2);
+    g.pop();
+    
+    g.push();
+    g.translate(355, storyIconY); 
+    g.stroke(255);
+    g.strokeWeight(2);
+    g.noFill();
+    g.strokeJoin(ROUND);
+    g.beginShape();
+    g.vertex(-9, 5); 
+    g.vertex(8, -8);
+    g.vertex(4, 9);
+    g.vertex(-1, 1);
+    g.endShape(CLOSE);
+    g.pop();
+    
+    g.strokeWeight(1);
   }
 
   handleClick(mx, my) {
     if (this.currentScreen === "feed") {
-      // 스크롤된 상태이므로 클릭 y좌표를 실제 피드 내부 좌표로 보정
       let contentY = my + this.scrollY;
-
       this.checkStoryClick(mx, contentY);
       this.checkLikeClick(mx, contentY);
     } else if (this.currentScreen === "story") {
-      this.checkStoryViewerClick(mx, my);
+      if (mx > this.w - 50 && my < 80) {
+        this.currentScreen = "feed";
+        this.storyElapsedTime = 0;
+      }
     }
   }
 
-  handleWheel(delta) {
-    // 스토리 화면에서는 피드 스크롤하지 않음
-    if (this.currentScreen !== "feed") {
-      return;
+  // --- 💡 수정: 마우스 휠 작동 시 경계를 넘어갈 때 튕기는 고무줄 역학 세팅 ---
+  handleWheel(event) {
+    if (this.currentScreen !== "feed") return;
+    
+    if (abs(event.deltaX) > 0) {
+      this.targetStoryScrollX += event.deltaX * 0.7;
     }
+    
+    if (abs(event.deltaY) > 0) {
+      let maxScroll = this.getMaxScroll();
+      let dy = event.deltaY * 0.7;
 
-    // delta가 양수면 아래로 스크롤
-    this.targetScrollY += delta * 0.7;
+      // 경계를 넘어간 상태에서 더 밀어내려고 하면 스크롤 감도를 0.3배로 무겁게 축소
+      if (this.targetScrollY < 0 && dy < 0) dy *= 0.3;
+      if (this.targetScrollY > maxScroll && dy > 0) dy *= 0.3;
 
-    this.constrainScroll();
-  }
-
-  constrainScroll() {
-    let maxScroll = this.getMaxScroll();
-
-    this.targetScrollY = constrain(this.targetScrollY, 0, maxScroll);
+      this.targetScrollY += dy;
+      // 한계점 제한
+      this.targetScrollY = constrain(this.targetScrollY, -130, maxScroll + 130);
+    }
   }
 
   getMaxScroll() {
     let contentBottom = this.postStartY + this.posts.length * this.postGap;
     let visibleBottom = this.h - this.bottomNavH;
-
     return max(0, contentBottom - visibleBottom);
   }
 
   checkStoryClick(mx, my) {
-    for (let i = 0; i < this.stories.length; i++) {
-      let x = 45 + i * 85;
+    if (this.dragDistance > 5) return;
+    let scrollMx = mx + this.storyScrollX; 
+
+    if (dist(scrollMx, my, 45, 105) < 35) {
+      console.log("내 스토리 클릭됨");
+      return;
+    }
+
+    for (let i = 0; i < this.storyGroups.length; i++) {
+      let x = 45 + (i + 1) * 85; 
       let y = 105;
-
-      let d = dist(mx, my, x, y);
-
-      if (d < 35) {
-        this.currentStory = i;
+      if (dist(scrollMx, my, x, y) < 35) {
+        let group = this.storyGroups[i];
+        let targetIndex = group.firstIndex;
+        for (let j = 0; j < this.stories.length; j++) {
+          if (this.stories[j].name === group.name && !this.stories[j].isRead) {
+            targetIndex = j;
+            break; 
+          }
+        }
+        this.currentStory = targetIndex; 
         this.currentScreen = "story";
+        this.stories[this.currentStory].isRead = true;
+        this.storyElapsedTime = 0; 
+        this.ignorePress = true;
       }
     }
   }
@@ -355,38 +687,33 @@ class InstagramUI {
   checkLikeClick(mx, my) {
     for (let i = 0; i < this.posts.length; i++) {
       let postY = this.postStartY + i * this.postGap;
-
-      if (
-        mx > 10 &&
-        mx < 45 &&
-        my > postY + 305 &&
-        my < postY + 345
-      ) {
+      if (mx > 10 && mx < 45 && my > postY + 305 && my < postY + 345) {
         this.posts[i].toggleLike();
       }
     }
   }
 
   checkStoryViewerClick(mx, my) {
-    if (mx > this.w - 50 && my < 80) {
+    if (this.isTransitioning) return;
+    
+    let prevStory = this.currentStory;
+    this.nextStoryIndex = (mx < this.w / 2) ? this.currentStory - 1 : this.currentStory + 1;
+
+    if (this.nextStoryIndex < 0 || this.nextStoryIndex >= this.stories.length) {
       this.currentScreen = "feed";
+      this.currentStory = 0;
+      this.storyElapsedTime = 0;
       return;
     }
-
-    if (mx < this.w / 2) {
-      this.currentStory--;
-
-      if (this.currentStory < 0) {
-        this.currentScreen = "feed";
-        this.currentStory = 0;
-      }
+    
+    if (this.stories[prevStory].name !== this.stories[this.nextStoryIndex].name) {
+      this.isTransitioning = true;
+      this.transitionProgress = 0;
+      this.stories[this.nextStoryIndex].isRead = true; 
     } else {
-      this.currentStory++;
-
-      if (this.currentStory >= this.stories.length) {
-        this.currentScreen = "feed";
-        this.currentStory = 0;
-      }
+      this.currentStory = this.nextStoryIndex;
+      this.stories[this.currentStory].isRead = true; 
+      this.storyElapsedTime = 0; 
     }
   }
 
