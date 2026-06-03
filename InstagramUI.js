@@ -34,10 +34,9 @@ class InstagramUI {
     this.lastPressedY = 0;
     this.ignorePress = false; 
 
-    // --- 💡 새로고침 및 여백 상호작용 변수 추가 ---
     this.isRefreshing = false;
     this.refreshTimer = 0;
-    this.refreshThreshold = -70; // 이 좌표(px)보다 더 당기면 새로고침 발동
+    this.refreshThreshold = -70; 
 
     this.storyBuffer = createGraphics(this.w, this.h);
     this.storyBuffer2 = createGraphics(this.w, this.h);
@@ -67,33 +66,46 @@ class InstagramUI {
     }
   }
 
+  addMyStory(img) {
+    if (typeof dateManager === 'undefined' || !dateManager.users["주인공"]) return;
+
+    let myUser = dateManager.users["주인공"];
+    let newStory = new Story(myUser, color(50, 150, 255), color(150, 200, 255), color(20), "새 스토리", img);
+
+    this.stories.unshift(newStory);
+
+    this.storyGroups = [];
+    for (let i = 0; i < this.stories.length; i++) {
+      let s = this.stories[i];
+      let existingGroup = this.storyGroups.find(g => g.name === s.name);
+      if (!existingGroup) {
+        this.storyGroups.push({ name: s.name, firstIndex: i });
+      }
+    }
+  }
+
   update(appMouse) {
     let maxScroll = this.getMaxScroll();
 
-    // --- 💡 고무줄 복원 물리: 경계를 넘어간 스크롤을 원래대로 부드럽게 당김 ---
     if (this.targetScrollY < 0) {
       this.targetScrollY = lerp(this.targetScrollY, 0, 0.15);
     } else if (this.targetScrollY > maxScroll) {
       this.targetScrollY = lerp(this.targetScrollY, maxScroll, 0.15);
     }
     
-    // 세로 피드 드래그(스크롤) 처리
     if (mouseIsPressed && !this.isDraggingStory && this.currentScreen === "feed") {
       let scaleFactor = (typeof phone !== 'undefined') ? phone.scale : 1;
       let dy = movedY / scaleFactor;
 
-      // 경계를 넘어갈 때 마우스 드래그에 묵직한 저항(0.3)을 줍니다
       if (this.targetScrollY < 0 && dy > 0) dy *= 0.3;
       if (this.targetScrollY > maxScroll && dy < 0) dy *= 0.3;
 
       if (!this.wasMousePressed) {
-        // 드래그가 피드 영역 본문(Y > 170)에서 일어날 때만 세로 스크롤 적용
         if (appMouse && appMouse.y > 170) this.isDraggingVertical = true;
       }
 
       if (this.isDraggingVertical) {
         this.targetScrollY -= dy;
-        // 무한정 늘어나지 않도록 최대 여백 한계선 세팅 (-130px ~ max+130px)
         this.targetScrollY = constrain(this.targetScrollY, -130, maxScroll + 130);
       }
     } else {
@@ -102,21 +114,15 @@ class InstagramUI {
 
     this.scrollY = lerp(this.scrollY, this.targetScrollY, 0.22);
     
-    // --- 💡 새로고침 트리거 조건문 ---
     if (this.scrollY < this.refreshThreshold && !this.isRefreshing) {
       this.isRefreshing = true;
-      this.refreshTimer = frameCount; // 재생 시간 측정용
-      
-      // 여기에 나중에 새로고침 시 데이터가 무작위로 섞이거나 글리치가 일어나는 효과를 넣을 수 있습니다!
-      // 예시: dateManager.loadDailyData();
+      this.refreshTimer = frameCount; 
     }
 
-    // 새로고침 애니메이션 지속 시간 (약 1.5초 후 자동 종료)
     if (this.isRefreshing && frameCount - this.refreshTimer > 90) {
       this.isRefreshing = false;
     }
 
-    // --- 스토리 가로 스크롤 영역 ---
     let totalStoryIcons = 1 + this.storyGroups.length; 
     let maxStoryScroll = max(0, 45 + totalStoryIcons * 85 - this.w + 20);
 
@@ -141,7 +147,6 @@ class InstagramUI {
     this.targetStoryScrollX = constrain(this.targetStoryScrollX, 0, maxStoryScroll);
     this.storyScrollX = lerp(this.storyScrollX, this.targetStoryScrollX, 0.2);
 
-    // --- 스토리 타이머 조작 영역 ---
     if (this.currentScreen === "story") {
       if (this.isTransitioning) {
         this.transitionProgress += 0.05; 
@@ -224,19 +229,14 @@ class InstagramUI {
   displayScrollableFeed(appMouse) {
     push();
     drawingContext.save();
-    // 상단바와 하단 네비게이션 사이 구역 클리핑
     this.createRectClip(0, this.headerH, this.w, this.h - this.headerH - this.bottomNavH);
     
-    // --- 💡 새로고침 인디케이터 그리기 ---
-    // 위로 스크롤을 당겨 여백이 생겼을 때만 노출
     if (this.scrollY < 0) {
       push();
       translate(this.w / 2, this.headerH + 30); 
       stroke(150, 200, 255);
       strokeWeight(2.5);
       noFill();
-      
-      // 새로고침 로딩 중일 때는 계속 돌고, 당기는 중일 때는 늘어난 길이에 맞춰 회전각이 변함
       let spinAngle = this.isRefreshing ? (frameCount * 0.1) : map(this.scrollY, 0, this.refreshThreshold, 0, TWO_PI);
       rotate(spinAngle);
       arc(0, 0, 20, 20, 0, PI * 1.5);
@@ -314,10 +314,9 @@ class InstagramUI {
     translate(myX, myY);
     if (isMyHover) scale(1.1);
 
-    noStroke();
-    fill(40); circle(0, 0, 56);
-    fill(60); circle(0, 0, 48);
-    fill(150); circle(0, -5, 14); ellipse(0, 13, 28, 22);
+    if (typeof dateManager !== 'undefined' && dateManager.users["주인공"]) {
+      dateManager.users["주인공"].displayProfile(0, 0, 56);
+    }
 
     push();
     translate(18, 18);
@@ -432,11 +431,15 @@ class InstagramUI {
         circle(-2, -2, 12);
         line(2.5, 2.5, 8, 8);
       } else if (i === 4) {
-        circle(0, 0, 20);
-        fill(iconColor);
-        noStroke();
-        circle(0, -3, 7);
-        arc(0, 6.5, 14, 11, PI, TWO_PI);
+        if (typeof dateManager !== 'undefined' && dateManager.users["주인공"]) {
+          dateManager.users["주인공"].displayProfile(0, 0, 24);
+        } else {
+          circle(0, 0, 20);
+          fill(iconColor);
+          noStroke();
+          circle(0, -3, 7);
+          arc(0, 6.5, 14, 11, PI, TWO_PI);
+        }
       }
       pop();
     }
@@ -450,7 +453,6 @@ class InstagramUI {
     let trackH = trackBottom - trackTop;
     let barH = max(40, trackH * 0.35);
     
-    // 오버 스크롤 시 스크롤바 바인딩 보정
     let barY = map(constrain(this.scrollY, 0, maxScroll), 0, maxScroll, trackTop, trackBottom - barH);
 
     noStroke();
@@ -560,8 +562,8 @@ class InstagramUI {
       }
     }
 
-    g.fill(255);
-    g.circle(32, 48, 32);
+    s.user.displayProfile(32, 48, 32, g);
+
     g.fill(255);
     g.textAlign(LEFT, BASELINE);
     g.textStyle(BOLD);
@@ -626,26 +628,26 @@ class InstagramUI {
     }
   }
 
-  // --- 💡 수정: 마우스 휠 작동 시 경계를 넘어갈 때 튕기는 고무줄 역학 세팅 ---
   handleWheel(event) {
     if (this.currentScreen !== "feed") return;
-    
     if (abs(event.deltaX) > 0) {
       this.targetStoryScrollX += event.deltaX * 0.7;
     }
-    
     if (abs(event.deltaY) > 0) {
       let maxScroll = this.getMaxScroll();
       let dy = event.deltaY * 0.7;
 
-      // 경계를 넘어간 상태에서 더 밀어내려고 하면 스크롤 감도를 0.3배로 무겁게 축소
       if (this.targetScrollY < 0 && dy < 0) dy *= 0.3;
       if (this.targetScrollY > maxScroll && dy > 0) dy *= 0.3;
 
       this.targetScrollY += dy;
-      // 한계점 제한
       this.targetScrollY = constrain(this.targetScrollY, -130, maxScroll + 130);
     }
+  }
+
+  constrainScroll() {
+    let maxScroll = this.getMaxScroll();
+    this.targetScrollY = constrain(this.targetScrollY, 0, maxScroll);
   }
 
   getMaxScroll() {
@@ -659,7 +661,9 @@ class InstagramUI {
     let scrollMx = mx + this.storyScrollX; 
 
     if (dist(scrollMx, my, 45, 105) < 35) {
-      console.log("내 스토리 클릭됨");
+      if (typeof storyUploader !== 'undefined') {
+        storyUploader.open(); 
+      }
       return;
     }
 

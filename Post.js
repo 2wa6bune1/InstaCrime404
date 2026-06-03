@@ -2,8 +2,9 @@
 // post.js
 // ======================================================
 class Post {
-  constructor(user, location, caption, likes, bg, img = null) {
-    this.user = user;
+  constructor(userObj, location, caption, likes, bg, img = null) {
+    this.userObj = userObj;
+    this.user = userObj.name; 
     this.location = location;
     this.caption = caption;
     this.likes = likes;
@@ -13,13 +14,11 @@ class Post {
   }
 
   display(y, appW, scrolledMouse = {x: -999, y: -999}) {
-    // --- 💡 수정: 게시물 전체를 덮는 다크 그레이 배경 ---
     fill(35); 
     noStroke();
     rect(0, y, appW, 400);
 
-    fill(50);
-    circle(28, y + 28, 36);
+    this.userObj.displayProfile(28, y + 28, 36);
 
     fill(255); 
     textAlign(LEFT, BASELINE);

@@ -1,14 +1,11 @@
 // ======================================================
 // StoryUploader.js
 // ======================================================
-
 class StoryUploader {
   constructor(instagramUI) {
     this.instagramUI = instagramUI;
-
     this.fileInput = createFileInput(this.handleFile.bind(this));
     this.fileInput.hide();
-
     this.isUploading = false;
   }
 

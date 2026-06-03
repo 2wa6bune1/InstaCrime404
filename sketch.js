@@ -4,14 +4,15 @@
 let phone;
 let dateManager;
 let room;
+let storyUploader;
 
 let gameState = "START"; 
 
-let imgPost1, imgStory1; 
+let imgProfileMain, imgProfileFriend, imgProfileNpc, imgProfileRival;
+let imgProfileAlba, imgProfileCop, imgProfileX, imgProfileShop, imgProfileSystem;
 
 function preload() {
-  // imgPost1 = loadImage('assets/post1.png');
-  // imgStory1 = loadImage('assets/story1.png');
+   imgProfileFriend = loadImage('friendProfile.jpg');
 }
 
 function setup() {
@@ -23,6 +24,8 @@ function setup() {
   phone = new PhoneUI(); 
   
   dateManager.loadDailyData(); 
+  
+  storyUploader = new StoryUploader(phone.instagram); 
 }
 
 function draw() {
@@ -68,14 +71,14 @@ function mousePressed() {
     return;
   }
 
-  // --- 💡 핸드폰 밖의 여백(배경)을 누르면 폰이 엎어집니다 ---
   let phoneClicked = phone.handleMousePressed(); 
-  
   if (!phoneClicked) {
     if (phone.expanded) {
-      phone.minimize(); // 폰 닫기 (주인공 방 복귀)
+      phone.minimize(); 
     } else {
-      room.checkClick(mouseX, mouseY); // 방의 다른 요소(다음날 버튼 등) 클릭
+      if (typeof room.checkClick === "function") {
+        room.checkClick(mouseX, mouseY); 
+      }
     }
   }
 }

@@ -168,7 +168,6 @@ class PhoneUI {
     this.targetX = this.smallX;
     this.targetY = this.smallY;
     
-    // --- 추가: 폰을 엎어놓으면 스토리에서 빠져나와 피드로 초기화 ---
     this.instagram.currentScreen = "feed"; 
   }
 
