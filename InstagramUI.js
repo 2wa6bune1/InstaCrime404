@@ -215,14 +215,19 @@ class InstagramUI {
     }
   }
 
-  display(appMouse = { x: -999, y: -999 }) {
+  display(appMouse = {x: -999, y: -999}) {
     fill(20);
     noStroke();
     rect(0, 0, this.w, this.h, 25);
+  
     if (this.currentScreen === "feed") {
       this.displayFeed(appMouse);
     } else if (this.currentScreen === "story") {
       this.displayStoryViewer();
+    } else if (this.currentScreen === "storyUpload") {
+      if (typeof storyUploader !== "undefined") {
+        storyUploader.display(appMouse);
+      }
     }
   }
 
@@ -677,18 +682,17 @@ class InstagramUI {
   
   handleClick(mx, my) {
     if (this.currentScreen === "feed") {
-      if (this.checkAccountSwitchClick(mx, my)) {
-        return;
-      }
-
       let contentY = my + this.scrollY;
       this.checkStoryClick(mx, contentY);
       this.checkLikeClick(mx, contentY);
-
     } else if (this.currentScreen === "story") {
       if (mx > this.w - 50 && my < 80) {
         this.currentScreen = "feed";
         this.storyElapsedTime = 0;
+      }
+    } else if (this.currentScreen === "storyUpload") {
+      if (typeof storyUploader !== "undefined") {
+        storyUploader.handleClick(mx, my);
       }
     }
   }
