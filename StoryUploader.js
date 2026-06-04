@@ -13,9 +13,7 @@ class StoryUploader {
     this.ghostEffectDone = false;
 
     // 귀신 연출 길이
-    // 60fps 기준 120프레임 = 약 2초
-    // 더 길게 하고 싶으면 180 정도로 늘리면 됨
-    this.ghostEffectDuration = 120;
+    this.ghostEffectDuration = 240;
 
     // 태그 선택 상태
     this.selectedTarget = null;
@@ -157,31 +155,28 @@ class StoryUploader {
 
   // ======================================================
   // 귀신 연출 자리
-  // 현재는 귀신 대신 강한 노이즈/글리치 연출만 넣어둠.
-  // 나중에 영상, 이미지, 애니메이션을 여기에 추가하면 됨.
-  // ======================================================
+
   displayGhostEffect(w, h) {
     let t = frameCount - this.cameraStartFrame;
-
+  
     // 전체 연출 진행도
     let progress = constrain(t / this.ghostEffectDuration, 0, 1);
-
-    // 노이즈 강도: 중간에 가장 강하고, 앞뒤로 약해짐
+  
+    // 노이즈 강도: 중간에 가장 강함
     let intensity = sin(progress * PI);
-
-    // 강한 점 노이즈
+  
+    // 1. 기본 강한 노이즈
     let noiseCount = floor(map(intensity, 0, 1, 30, 260));
-
+  
     for (let i = 0; i < noiseCount; i++) {
       noStroke();
-
-      // 흰 점 / 검은 점 섞기
+  
       if (random() < 0.65) {
         fill(255, random(40, 150) * intensity);
       } else {
         fill(0, random(40, 120) * intensity);
       }
-
+  
       rect(
         random(w),
         random(h),
@@ -189,27 +184,87 @@ class StoryUploader {
         random(1, 5)
       );
     }
-
-    // 가로줄 글리치
+  
+    // 2. 귀신이 지나가는 구간
+    // 45~75프레임 사이에만 등장
+    let ghostStart = 45;
+    let ghostEnd = 75;
+  
+    if (t >= ghostStart && t <= ghostEnd) {
+      let ghostProgress = map(t, ghostStart, ghostEnd, 0, 1);
+  
+      // 왼쪽 밖에서 오른쪽 밖으로 빠르게 이동
+      let ghostX = lerp(-120, w + 120, ghostProgress);
+  
+      // 살짝 위아래로 흔들림
+      let ghostY = h / 2 - 40 + sin(t * 0.45) * 12;
+  
+      // 등장 중간에 가장 진하게
+      let ghostAlpha = sin(ghostProgress * PI) * 150;
+  
+      push();
+  
+      // 약간 블러처럼 보이게 여러 겹 그림
+      noStroke();
+  
+      fill(255, ghostAlpha * 0.18);
+      ellipse(ghostX - 18, ghostY + 10, 95, 220);
+  
+      fill(255, ghostAlpha * 0.32);
+      ellipse(ghostX, ghostY, 70, 190);
+  
+      fill(230, ghostAlpha * 0.45);
+      ellipse(ghostX + 10, ghostY - 35, 48, 70);
+  
+      // 머리카락/그림자 느낌
+      fill(0, ghostAlpha * 0.35);
+      ellipse(ghostX + 7, ghostY - 55, 58, 80);
+  
+      // 얼굴 구멍 느낌
+      fill(0, ghostAlpha * 0.65);
+      ellipse(ghostX - 5, ghostY - 50, 7, 18);
+      ellipse(ghostX + 16, ghostY - 50, 7, 18);
+  
+      // 입처럼 보이는 어두운 구멍
+      ellipse(ghostX + 6, ghostY - 20, 13, 28);
+  
+      pop();
+  
+      // 귀신이 지나가는 동안 화면 찢김 강화
+      for (let i = 0; i < 8; i++) {
+        noStroke();
+        fill(255, random(20, 90));
+        rect(random(-20, 20), random(h), w + random(20, 80), random(2, 8));
+      }
+  
+      // 순간 플래시
+      if (random() < 0.25) {
+        noStroke();
+        fill(255, random(40, 120));
+        rect(0, 0, w, h);
+      }
+    }
+  
+    // 3. 가로줄 글리치
     let glitchLineCount = floor(map(intensity, 0, 1, 1, 10));
-
+  
     for (let i = 0; i < glitchLineCount; i++) {
       let y = random(h);
       let lineH = random(2, 12);
-
+  
       noStroke();
       fill(255, random(20, 80) * intensity);
       rect(0, y, w, lineH);
     }
-
-    // 화면이 찢기는 듯한 검은 가로줄
+  
+    // 4. 검은 가로줄
     if (random() < 0.35 * intensity) {
       noStroke();
       fill(0, random(80, 180));
       rect(0, random(h), w, random(6, 24));
     }
-
-    // 중간 구간에서 순간적으로 화면 번쩍임
+  
+    // 5. 중간 구간 번쩍임
     if (
       t > this.ghostEffectDuration * 0.42 &&
       t < this.ghostEffectDuration * 0.58
@@ -220,39 +275,6 @@ class StoryUploader {
         rect(0, 0, w, h);
       }
     }
-
-    // 화면 중앙부 왜곡 느낌의 반투명 박스
-    if (intensity > 0.35) {
-      let boxW = random(80, 180);
-      let boxH = random(20, 70);
-      let boxX = random(w - boxW);
-      let boxY = random(120, h - 180);
-
-      noStroke();
-      fill(255, random(10, 35) * intensity);
-      rect(boxX, boxY, boxW, boxH);
-    }
-
-    // 나중에 귀신 영상/이미지를 넣을 자리
-    /*
-      예시 1. 이미지로 넣을 경우
-
-      if (t > 40 && t < 100) {
-        image(ghostImg, 0, 0, w, h);
-      }
-
-      예시 2. 영상으로 넣을 경우
-
-      if (t === 35) {
-        ghostVideo.play();
-      }
-
-      if (t > 35 && t < 120) {
-        image(ghostVideo, 0, 0, w, h);
-      }
-
-      영상 길이에 맞춰 this.ghostEffectDuration 값을 조절하면 됨.
-    */
   }
 
   displayCameraBottomUI(w, h, appMouse = { x: -999, y: -999 }) {
