@@ -438,8 +438,10 @@ class InstagramUI {
         circle(-2, -2, 12);
         line(2.5, 2.5, 8, 8);
       } else if (i === 4) {
-        if (typeof dateManager !== 'undefined' && dateManager.users["주인공"]) {
-          dateManager.users["주인공"].displayProfile(0, 0, 24);
+        let accountUser = this.getCurrentAccountUser();
+
+        if (accountUser) {
+          accountUser.displayProfile(0, 0, 24);
         } else {
           circle(0, 0, 20);
           fill(iconColor);
@@ -623,14 +625,21 @@ class InstagramUI {
   }
 
   handleClick(mx, my) {
-    if (this.currentScreen === "feed") {
-      let contentY = my + this.scrollY;
-      this.checkStoryClick(mx, contentY);
-      this.checkLikeClick(mx, contentY);
-    } else if (this.currentScreen === "story") {
-      if (mx > this.w - 50 && my < 80) {
-        this.currentScreen = "feed";
-        this.storyElapsedTime = 0;
+    handleClick(mx, my) {
+      if (this.currentScreen === "feed") {
+        if (this.checkAccountSwitchClick(mx, my)) {
+          return;
+        }
+
+        let contentY = my + this.scrollY;
+        this.checkStoryClick(mx, contentY);
+        this.checkLikeClick(mx, contentY);
+
+      } else if (this.currentScreen === "story") {
+        if (mx > this.w - 50 && my < 80) {
+          this.currentScreen = "feed";
+          this.storyElapsedTime = 0;
+        }
       }
     }
   }
