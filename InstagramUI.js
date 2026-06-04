@@ -49,7 +49,19 @@ class InstagramUI {
     this.minDoubleClickDelay = 1;    // 0.001초
     this.maxDoubleClickDelay = 500;   // 0.5초
   }
-
+    this.dmScrollY = 0;
+    this.dmTargetScrollY = 0;
+    this.chatScrollY = 0;
+    this.chatTargetScrollY = 0;
+    this.currentChatRoom = 0;
+    this.chatInputText = "";
+    this.chatCursorBlink = 0;
+    this._chatPressed = false;
+    this._chatDragDist = 0;
+    this._chatDragMode = null;
+    this.chatRooms = [];
+    this.loadChatData();
+  
   loadData(storiesData, postsData) {
     this.stories = storiesData;
     this.posts = postsData;
@@ -193,7 +205,11 @@ class InstagramUI {
       }
     }
   }
-
+  if (this.currentScreen === "dmList" || this.currentScreen === "chatRoom") {
+      this.updateChatScroll(appMouse);
+    }
+    this.chatCursorBlink += deltaTime;
+  
   handleAutomaticNext() {
     let prevStory = this.currentStory;
     this.nextStoryIndex = this.currentStory + 1;
@@ -308,7 +324,20 @@ class InstagramUI {
     stroke(50);
     line(0, 64, this.w, 64);
   }
-
+  
+   let unread = this.getUnreadCount();
+    if (unread > 0) {
+      noStroke();
+      fill(255, 60, 90);
+      circle(367, 22, 17);
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(10);
+      textStyle(BOLD);
+      text(unread > 9 ? "9+" : "" + unread, 367, 23);
+      textStyle(NORMAL);
+    }
+  
   displayStories(scrolledMouse) {
     fill(30);
     noStroke();
@@ -696,6 +725,14 @@ class InstagramUI {
       }
     }
   }
+   if (this.currentScreen === "dmList") {
+      this.dmTargetScrollY = constrain(this.dmTargetScrollY + event.deltaY * 0.7, 0, this.getDMMaxScroll());
+      return;
+    }
+    if (this.currentScreen === "chatRoom") {
+      this.chatTargetScrollY = constrain(this.chatTargetScrollY + event.deltaY * 0.7, 0, this.getChatMaxScroll());
+      return;
+    }
 
   handleWheel(event) {
     if (this.currentScreen !== "feed") return;
@@ -797,3 +834,526 @@ class InstagramUI {
     drawingContext.clip();
   }
 }
+loadChatData() {
+    const u = (name) =>
+      (typeof dateManager !== "undefined" && dateManager.users && dateManager.users[name])
+        ? dateManager.users[name]
+        : null;
+ 
+    // messages: { text, sent }   sent=true 면 "내가 보낸" 말풍선(오른쪽 파란색)
+    this.chatRooms = [
+      {
+        name: "의문의_X",
+        user: u("의문의_X"),
+        avatarColor: [120, 90, 200],
+        active: true,
+        activeText: "활동 중",
+        unread: true,
+        seen: false,
+        time: "1분",
+        messages: [
+          { text: "자니?", sent: false },
+          { text: "네가 올린 스토리 봤어", sent: false },
+          { text: "...누구세요?", sent: true },
+          { text: "곧 알게 될 거야 🙂", sent: false },
+        ],
+      },
+      {
+        name: "이서준",
+        user: u("이서준"),
+        avatarColor: [70, 140, 230],
+        active: true,
+        activeText: "방금 활동",
+        unread: true,
+        seen: false,
+        time: "12분",
+        messages: [
+          { text: "내일 약속 그대로지?", sent: false },
+          { text: "ㅇㅇ 7시 강남역", sent: true },
+          { text: "오케이 늦지마ㅋㅋ", sent: false },
+        ],
+      },
+      {
+        name: "김하늘",
+        user: u("김하늘"),
+        avatarColor: [230, 120, 150],
+        active: false,
+        unread: false,
+        seen: true,
+        time: "1시간",
+        messages: [
+          { text: "사진 잘 받았어 고마워!", sent: false },
+          { text: "별말씀ㅎㅎ 잘 나왔더라", sent: true },
+        ],
+      },
+      {
+        name: "동아리 단톡방",
+        user: null,
+        avatarColor: [90, 180, 160],
+        active: false,
+        unread: true,
+        seen: false,
+        time: "3시간",
+        messages: [
+          { text: "이번 주 모임 토요일 2시!", sent: false },
+          { text: "장소는 동방입니다 📍", sent: false },
+        ],
+      },
+      {
+        name: "박지민",
+        user: u("박지민"),
+        avatarColor: [200, 160, 80],
+        active: false,
+        unread: false,
+        seen: true,
+        time: "어제",
+        messages: [
+          { text: "과제 자료 공유해줘서 고마워", sent: false },
+          { text: "ㄱㄱ 화이팅", sent: true },
+        ],
+      },
+      {
+        name: "엄마",
+        user: u("엄마"),
+        avatarColor: [180, 110, 110],
+        active: false,
+        unread: false,
+        seen: true,
+        time: "2일",
+        messages: [
+          { text: "밥은 챙겨 먹고 다니니?", sent: false },
+          { text: "응 잘 먹고 있어요!", sent: true },
+        ],
+      },
+    ];
+  }
+ 
+  getUnreadCount() {
+    if (!this.chatRooms) return 0;
+    let n = 0;
+    for (let r of this.chatRooms) if (r.unread) n++;
+    return n;
+  }
+ 
+  room() { return this.chatRooms[this.currentChatRoom]; }
+ 
+  openDMList() {
+    this.currentScreen = "dmList";
+    this.dmScrollY = 0;
+    this.dmTargetScrollY = 0;
+  }
+ 
+  openChatRoom(index) {
+    this.currentChatRoom = index;
+    let room = this.chatRooms[index];
+    room.unread = false;  // 읽음 처리 → 파란 점 사라짐, 글씨 일반체
+    this.currentScreen = "chatRoom";
+    this.chatInputText = "";
+    this.chatTargetScrollY = this.getChatMaxScroll();
+    this.chatScrollY = this.chatTargetScrollY;
+  }
+ 
+  sendMessage(txt) {
+    if (!txt) return;
+    let room = this.room();
+    room.messages.push({ text: txt, sent: true });
+    room.seen = false;
+    room.time = "지금";
+    this.chatInputText = "";
+    this.chatTargetScrollY = 1e9; // updateChatScroll에서 maxScroll로 보정됨
+  }
+ 
+  // (선택) 키보드 입력 ─ 메인 스케치 keyTyped / keyPressed 에서 호출
+  handleChatKeyTyped(k) {
+    if (this.currentScreen !== "chatRoom") return false;
+    if (k && k.length === 1) { this.chatInputText += k; return true; }
+    return false;
+  }
+ 
+  handleChatKeyPressed(kc) {
+    if (this.currentScreen !== "chatRoom") return false;
+    if (kc === BACKSPACE) { this.chatInputText = this.chatInputText.slice(0, -1); return true; }
+    if (kc === ENTER || kc === RETURN) {
+      let t = this.chatInputText.trim();
+      if (t.length) this.sendMessage(t);
+      return true;
+    }
+    return false;
+  }
+ 
+  getDMMaxScroll() {
+    let itemH = 72;
+    let contentH = 112 + this.chatRooms.length * itemH + 12;
+    return max(0, contentH - this.h);
+  }
+ 
+  getChatMaxScroll() {
+    let headerH = 70, inputH = 60;
+    let viewH = this.h - headerH - inputH;
+    let total = this.layoutChatMessages().totalH;
+    return max(0, total - viewH);
+  }
+ 
+  updateChatScroll(appMouse) {
+    const scaleFactor = (typeof phone !== "undefined") ? phone.scale : 1;
+    const isChat = this.currentScreen === "chatRoom";
+    let maxScroll = isChat ? this.getChatMaxScroll() : this.getDMMaxScroll();
+ 
+    if (mouseIsPressed && !this._chatPressed) {
+      this._chatPressed = true;
+      this._chatDragDist = 0;
+      this._chatDragMode = (appMouse && appMouse.y > 112) ? (isChat ? "chat" : "dm") : null;
+    }
+    if (!mouseIsPressed) {
+      this._chatPressed = false;
+      this._chatDragMode = null;
+    }
+ 
+    if (mouseIsPressed && this._chatDragMode) {
+      let dy = movedY / scaleFactor;
+      this._chatDragDist += abs(movedY);
+      if (isChat) this.chatTargetScrollY -= dy;
+      else this.dmTargetScrollY -= dy;
+    }
+ 
+    if (isChat) {
+      this.chatTargetScrollY = constrain(this.chatTargetScrollY, 0, maxScroll);
+      this.chatScrollY = lerp(this.chatScrollY, this.chatTargetScrollY, 0.25);
+    } else {
+      this.dmTargetScrollY = constrain(this.dmTargetScrollY, 0, maxScroll);
+      this.dmScrollY = lerp(this.dmScrollY, this.dmTargetScrollY, 0.25);
+    }
+  }
+ 
+  handleDMListClick(mx, my) {
+    if (mx < 52 && my < 60) { this.currentScreen = "feed"; return; }  // 뒤로가기
+    if (this._chatDragDist > 6) return;  // 드래그였으면 무시
+ 
+    let listTop = 112, itemH = 72;
+    let y0 = listTop - this.dmScrollY;
+    for (let i = 0; i < this.chatRooms.length; i++) {
+      let top = y0 + i * itemH;
+      if (my > Math.max(top, 112) && my < top + itemH) { this.openChatRoom(i); return; }
+    }
+  }
+ 
+  handleChatRoomClick(mx, my) {
+    if (mx < 52 && my < 60) { this.currentScreen = "dmList"; return; }  // 뒤로가기
+ 
+    let inputH = 60, y = this.h - inputH;
+    if (my > y) {
+      // 입력창 오른쪽(보내기 / 하트) 영역
+      if (mx > this.w - 72) {
+        let t = this.chatInputText.trim();
+        if (t.length) this.sendMessage(t);
+        else this.sendMessage("❤️");
+      }
+      return;
+    }
+  }
+ 
+  drawChatAvatar(room, x, y, sz, g) {
+    if (room.user && room.user.displayProfile) {
+      if (g) room.user.displayProfile(x, y, sz, g);
+      else room.user.displayProfile(x, y, sz);
+      return;
+    }
+    let c = room.avatarColor || [110, 110, 110];
+    if (g) {
+      g.noStroke(); g.fill(c[0], c[1], c[2]); g.circle(x, y, sz);
+      g.fill(255); g.textAlign(CENTER, CENTER); g.textStyle(BOLD); g.textSize(sz * 0.42);
+      g.text(room.name.charAt(0), x, y + 1);
+    } else {
+      noStroke(); fill(c[0], c[1], c[2]); circle(x, y, sz);
+      fill(255); textAlign(CENTER, CENTER); textStyle(BOLD); textSize(sz * 0.42);
+      text(room.name.charAt(0), x, y + 1);
+    }
+    textStyle(NORMAL);
+  }
+ 
+  displayDMList(appMouse) {
+    const w = this.w, h = this.h;
+ 
+    // --- 스크롤되는 목록 (클리핑) ---
+    push();
+    drawingContext.save();
+    this.createRectClip(0, 112, w, h - 112);
+    let topY = 112 - this.dmScrollY;
+    for (let i = 0; i < this.chatRooms.length; i++) {
+      let y = topY + i * 72;
+      if (y > h || y + 72 < 100) continue;
+      this.drawDMRoom(this.chatRooms[i], y, 72, appMouse);
+    }
+    drawingContext.restore();
+    pop();
+ 
+    // --- 상단 고정 헤더 ---
+    fill(20); noStroke();
+    rect(0, 0, w, 112, 25, 25, 0, 0);
+ 
+    // 뒤로가기 화살표
+    let backHover = appMouse && dist(appMouse.x, appMouse.y, 24, 30) < 22;
+    stroke(255); strokeWeight(2.4); noFill(); strokeJoin(ROUND); strokeCap(ROUND);
+    push(); translate(22, 30); if (backHover) scale(1.15);
+    line(6, -8, -4, 0); line(-4, 0, 6, 8);
+    pop();
+ 
+    // 내 계정 이름 + 드롭다운
+    let myName = this.currentAccount === "main" ? "주인공" : "의문의_X";
+    noStroke(); fill(255);
+    textAlign(LEFT, CENTER); textStyle(BOLD); textSize(19);
+    text(myName, 50, 30);
+    let nameW = textWidth(myName);
+    stroke(255); strokeWeight(2); noFill();
+    line(50 + nameW + 9, 27, 50 + nameW + 14, 32);
+    line(50 + nameW + 14, 32, 50 + nameW + 19, 27);
+ 
+    // 새 메시지(작성) 아이콘
+    stroke(255); strokeWeight(2); noFill(); strokeJoin(ROUND);
+    push(); translate(w - 28, 30);
+    rect(-9, -9, 18, 18, 4);
+    line(-1, 1, 6, -6);
+    pop();
+ 
+    // 검색바
+    noStroke(); fill(38);
+    rect(15, 64, w - 30, 34, 12);
+    push(); translate(34, 81);
+    stroke(150); strokeWeight(2); noFill();
+    circle(0, 0, 11); line(4, 4, 8, 8);
+    pop();
+    noStroke(); fill(140);
+    textAlign(LEFT, CENTER); textStyle(NORMAL); textSize(13);
+    text("검색", 50, 82);
+ 
+    stroke(45); strokeWeight(1); line(0, 112, w, 112);
+  }
+ 
+  drawDMRoom(room, y, itemH, appMouse) {
+    const w = this.w;
+    let cy = y + itemH / 2;
+    let hover = appMouse && appMouse.y > Math.max(y, 112) && appMouse.y < y + itemH;
+    if (hover) { noStroke(); fill(255, 12); rect(0, y, w, itemH); }
+ 
+    // 아바타 + 활동중 표시
+    let ax = 42, asz = 52;
+    this.drawChatAvatar(room, ax, cy, asz);
+    if (room.active) {
+      noStroke(); fill(20); circle(ax + 18, cy + 17, 16);
+      fill(80, 220, 120); circle(ax + 18, cy + 17, 11);
+    }
+ 
+    // 이름
+    let tx = ax + 40;
+    noStroke(); fill(255);
+    textAlign(LEFT, BASELINE); textSize(15);
+    textStyle(room.unread ? BOLD : NORMAL);
+    text(room.name, tx, cy - 3);
+ 
+    // 미리보기 + 시간
+    let last = room.messages.length ? room.messages[room.messages.length - 1] : null;
+    let preview = last ? (last.sent ? "나: " : "") + last.text : "";
+    if (preview.length > 20) preview = preview.slice(0, 20) + "…";
+    textSize(13);
+    textStyle(room.unread ? BOLD : NORMAL);
+    fill(room.unread ? 240 : 150);
+    text(preview, tx, cy + 16);
+    let pw = textWidth(preview);
+    textStyle(NORMAL); fill(120);
+    text("  ·  " + room.time, tx + pw, cy + 16);
+ 
+    // 오른쪽: 안읽음=파란 점 / 읽음=카메라 아이콘
+    if (room.unread) {
+      noStroke(); fill(40, 130, 255);
+      circle(w - 28, cy, 11);
+    } else {
+      push(); translate(w - 28, cy);
+      stroke(120); strokeWeight(1.6); noFill(); strokeJoin(ROUND);
+      rect(-9, -5, 18, 13, 4);
+      circle(0, 1.5, 7);
+      line(-4, -5, -2, -8); line(-2, -8, 2, -8); line(2, -8, 4, -5);
+      pop();
+    }
+    textStyle(NORMAL);
+  }
+ 
+  layoutChatMessages() {
+    const w = this.w;
+    let maxBubbleW = w * 0.66;
+    let padX = 13, padY = 9, lineH = 19, gap = 7, topPad = 14;
+ 
+    textSize(14); textStyle(NORMAL);
+    let items = [];
+    let y = topPad;
+    let prevSent = null;
+    let msgs = this.room().messages;
+    for (let i = 0; i < msgs.length; i++) {
+      let m = msgs[i];
+      let lines = this.wrapText(m.text, maxBubbleW - padX * 2);
+      let maxLineW = 0;
+      for (let ln of lines) maxLineW = max(maxLineW, textWidth(ln));
+      let bw = min(maxBubbleW, maxLineW + padX * 2);
+      let bh = lines.length * lineH + padY * 2;
+      if (prevSent !== null && prevSent !== m.sent) y += 4;
+      items.push({ lines, bw, bh, sent: m.sent, top: y });
+      y += bh + gap;
+      prevSent = m.sent;
+    }
+    if (this.room().seen) y += 16;
+    return { items, totalH: y + 8 };
+  }
+ 
+  // 한글/영문 모두 자연스럽게 줄바꿈
+  wrapText(str, maxW) {
+    str = String(str);
+    let lines = [], cur = "", lastSpace = -1;
+    for (let i = 0; i < str.length; i++) {
+      let ch = str[i];
+      if (ch === "\n") { lines.push(cur); cur = ""; lastSpace = -1; continue; }
+      cur += ch;
+      if (ch === " ") lastSpace = cur.length - 1;
+      if (textWidth(cur) > maxW) {
+        if (lastSpace > 0) { lines.push(cur.slice(0, lastSpace)); cur = cur.slice(lastSpace + 1); }
+        else { lines.push(cur.slice(0, -1)); cur = ch; }
+        lastSpace = -1;
+      }
+    }
+    if (cur.length) lines.push(cur);
+    if (!lines.length) lines.push("");
+    return lines;
+  }
+ 
+  displayChatRoom(appMouse) {
+    const w = this.w, h = this.h;
+    let headerH = 70, inputH = 60, padX = 13, padY = 9, lineH = 19;
+ 
+    // --- 메시지 영역 (클리핑 + 스크롤) ---
+    push();
+    drawingContext.save();
+    this.createRectClip(0, headerH, w, h - headerH - inputH);
+ 
+    let layout = this.layoutChatMessages();
+    let baseY = headerH + 6 - this.chatScrollY;
+    let lastSent = null;
+ 
+    textSize(14); textStyle(NORMAL);
+    for (let it of layout.items) {
+      let y = baseY + it.top;
+      if (it.sent) lastSent = { it, y };
+      if (y > h || y + it.bh < headerH) continue;
+ 
+      let bx;
+      noStroke();
+      if (it.sent) { bx = w - 15 - it.bw; fill(70, 120, 245); }
+      else { bx = 15; fill(48); }
+      rect(bx, y, it.bw, it.bh, 18);
+ 
+      fill(255); textAlign(LEFT, TOP);
+      for (let li = 0; li < it.lines.length; li++) {
+        text(it.lines[li], bx + padX, y + padY + li * lineH);
+      }
+    }
+ 
+    // "읽음" 표시 (마지막으로 보낸 메시지 아래)
+    if (this.room().seen && lastSent) {
+      noStroke(); fill(150);
+      textAlign(RIGHT, TOP); textSize(11);
+      text("읽음", w - 16, lastSent.y + lastSent.it.bh + 3);
+    }
+ 
+    drawingContext.restore();
+    pop();
+ 
+    this.drawChatHeader(appMouse, headerH);
+    this.drawChatInput(appMouse, inputH);
+  }
+ 
+  drawChatHeader(appMouse, headerH) {
+    const w = this.w;
+    let room = this.room();
+    fill(20); noStroke();
+    rect(0, 0, w, headerH, 25, 25, 0, 0);
+ 
+    // 뒤로가기
+    let backHover = appMouse && dist(appMouse.x, appMouse.y, 20, 35) < 22;
+    stroke(255); strokeWeight(2.4); noFill(); strokeJoin(ROUND); strokeCap(ROUND);
+    push(); translate(20, 35); if (backHover) scale(1.15);
+    line(6, -8, -4, 0); line(-4, 0, 6, 8);
+    pop();
+ 
+    // 아바타 + 활동중
+    this.drawChatAvatar(room, 56, 35, 38);
+    if (room.active) {
+      noStroke(); fill(20); circle(56 + 13, 35 + 13, 12);
+      fill(80, 220, 120); circle(56 + 13, 35 + 13, 8);
+    }
+ 
+    // 이름 / 상태
+    noStroke(); fill(255);
+    textAlign(LEFT, BASELINE); textStyle(BOLD); textSize(15);
+    text(room.name, 84, room.active ? 32 : 40);
+    if (room.active) {
+      fill(150); textStyle(NORMAL); textSize(11);
+      text(room.activeText || "활동 중", 84, 48);
+    }
+ 
+    // 우측 아이콘: 전화 / 영상 / 정보
+    stroke(255); strokeWeight(2); noFill(); strokeJoin(ROUND);
+    push(); translate(w - 92, 35); rectMode(CENTER);
+    rect(0, 0, 13, 19, 3); line(-3, 7, 3, 7);
+    pop();
+    rectMode(CORNER);
+    push(); translate(w - 56, 35);
+    rect(-9, -6, 13, 12, 3);
+    noStroke(); fill(255); triangle(5, -4, 5, 4, 10, 0);
+    pop();
+    stroke(255); strokeWeight(2); noFill();
+    push(); translate(w - 22, 35);
+    circle(0, 0, 18);
+    noStroke(); fill(255);
+    circle(0, -4, 2.4); rect(-1, -1, 2, 8, 1);
+    pop();
+ 
+    stroke(45); strokeWeight(1); line(0, headerH, w, headerH);
+    textStyle(NORMAL);
+  }
+ 
+  drawChatInput(appMouse, inputH) {
+    const w = this.w, h = this.h;
+    let y = h - inputH;
+    fill(20); noStroke();
+    rect(0, y, w, inputH, 0, 0, 25, 25);
+    stroke(45); strokeWeight(1); line(0, y, w, y);
+ 
+    // 카메라 버튼(왼쪽 파란 원)
+    noStroke(); fill(60, 120, 255);
+    circle(28, y + inputH / 2, 34);
+    stroke(255); strokeWeight(1.6); noFill(); strokeJoin(ROUND);
+    push(); translate(28, y + inputH / 2);
+    rect(-7, -4, 14, 9, 3); circle(0, 1.5, 6);
+    line(-4, -4, -2, -7); line(-2, -7, 2, -7); line(2, -7, 4, -4);
+    pop();
+ 
+    // 입력 pill
+    let px = 50, pw = w - 50 - 14, ph = 38, py = y + (inputH - ph) / 2;
+    noStroke(); fill(36);
+    rect(px, py, pw, ph, 19);
+ 
+    textAlign(LEFT, CENTER); textSize(14); textStyle(NORMAL);
+    let showCursor = (this.chatCursorBlink % 1000) < 500;
+    if (this.chatInputText.length) {
+      let t = this.chatInputText;
+      while (textWidth(t) > pw - 70 && t.length) t = t.slice(1);
+      fill(255);
+      text(t + (showCursor ? "|" : ""), px + 16, py + ph / 2 + 1);
+      fill(70, 130, 255);
+      textAlign(RIGHT, CENTER); textStyle(BOLD);
+      text("보내기", w - 22, py + ph / 2 + 1);
+    } else {
+      fill(130);
+      text("메시지...", px + 16, py + ph / 2 + 1);
+      fill(255); textAlign(CENTER, CENTER); textSize(20); textStyle(NORMAL);
+      text("♡", w - 32, py + ph / 2 + 2);
+    }
+    textStyle(NORMAL);
+  }
