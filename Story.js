@@ -13,30 +13,35 @@ class Story {
   }
 
   displayIcon(x, y) {
-    noFill();
-    strokeWeight(4);
+  if (!this.isRead) {
+    
+    let steps = 60;
+    for (let i = 0; i < steps; i++) {
+      let angle = map(i, 0, steps, 0, TWO_PI);
+      let t = map(i, 0, steps, 0, 1);
 
-    if (!this.isRead) {
-      stroke(this.color1);
-      arc(x, y, 64, 64, PI, TWO_PI);
-      stroke(this.color2);
-      arc(x, y, 64, 64, 0, PI);
-    } else {
-      stroke(80); 
-      circle(x, y, 64);
+    
+      let r = lerp(255, 255, t);
+      let g = lerp(80, 200, t);
+      let b = lerp(150, 30, t);
+
+      stroke(r, g, b);
+      strokeWeight(4);
+      noFill();
+      arc(x, y, 64, 64, angle, angle + TWO_PI / steps + 0.01);
     }
-
-    noStroke();
-    fill(40); 
-    circle(x, y, 56);
-
-    fill(60); 
-    circle(x, y, 48);
-
-    fill(150); 
-    circle(x, y - 5, 14);
-    ellipse(x, y + 13, 28, 22);
-
-    strokeWeight(1);
+  } else {
+    stroke(80);
+    strokeWeight(4);
+    noFill();
+    circle(x, y, 64);
   }
+  noStroke();
+  fill(40);  circle(x, y, 56);
+  fill(60);  circle(x, y, 48);
+  fill(150);
+  circle(x, y - 5, 14);
+  ellipse(x, y + 13, 28, 22);
+  strokeWeight(1);
+}
 }
