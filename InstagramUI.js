@@ -624,22 +624,71 @@ class InstagramUI {
     g.strokeWeight(1);
   }
 
+  // 계정 전환 함수
+  changeAccount() {
+    if (this.currentAccount === "main") {
+      this.currentAccount = "sub";
+    } else {
+      this.currentAccount = "main";
+    }
+
+    // 계정이 바뀌면 피드를 맨 위로 올림
+    // 필요 없으면 아래 두 줄은 삭제 가능
+    this.targetScrollY = 0;
+    this.scrollY = 0;
+  }
+
+  // 현재 선택된 계정의 User 객체를 가져오는 함수
+  getCurrentAccountUser() {
+    if (typeof dateManager === "undefined") return null;
+
+    if (this.currentAccount === "main") {
+      return dateManager.users["주인공"];
+    } else {
+      return dateManager.users["의문의_X"];
+    }
+  }
+  checkAccountSwitchClick(mx, my) {
+    let profileX = 350;
+    let profileY = this.h - this.bottomNavH / 2;
+
+    let isProfileButton =
+      my > this.h - this.bottomNavH &&
+      dist(mx, my, profileX, profileY) < 25;
+
+    if (!isProfileButton) return false;
+
+    let now = millis();
+    let clickGap = now - this.lastAccountClickTime;
+
+    if (
+      clickGap >= this.minDoubleClickDelay &&
+      clickGap <= this.maxDoubleClickDelay
+    ) {
+      this.changeAccount();
+
+      this.lastAccountClickTime = 0;
+    } else {
+      this.lastAccountClickTime = now;
+    }
+
+    return true;
+  }
+  
   handleClick(mx, my) {
-    handleClick(mx, my) {
-      if (this.currentScreen === "feed") {
-        if (this.checkAccountSwitchClick(mx, my)) {
-          return;
-        }
+    if (this.currentScreen === "feed") {
+      if (this.checkAccountSwitchClick(mx, my)) {
+        return;
+      }
 
-        let contentY = my + this.scrollY;
-        this.checkStoryClick(mx, contentY);
-        this.checkLikeClick(mx, contentY);
+      let contentY = my + this.scrollY;
+      this.checkStoryClick(mx, contentY);
+      this.checkLikeClick(mx, contentY);
 
-      } else if (this.currentScreen === "story") {
-        if (mx > this.w - 50 && my < 80) {
-          this.currentScreen = "feed";
-          this.storyElapsedTime = 0;
-        }
+    } else if (this.currentScreen === "story") {
+      if (mx > this.w - 50 && my < 80) {
+        this.currentScreen = "feed";
+        this.storyElapsedTime = 0;
       }
     }
   }
@@ -743,57 +792,4 @@ class InstagramUI {
     drawingContext.closePath();
     drawingContext.clip();
   }
-}
-
-// 계정 전환 함수
-changeAccount() {
-  if (this.currentAccount === "main") {
-    this.currentAccount = "sub";
-  } else {
-    this.currentAccount = "main";
-  }
-
-  // 계정이 바뀌면 피드를 맨 위로 올림
-  // 필요 없으면 아래 두 줄은 삭제 가능
-  this.targetScrollY = 0;
-  this.scrollY = 0;
-}
-
-// 현재 선택된 계정의 User 객체를 가져오는 함수
-getCurrentAccountUser() {
-  if (typeof dateManager === "undefined") return null;
-
-  if (this.currentAccount === "main") {
-    return dateManager.users["주인공"];
-  } else {
-    return dateManager.users["의문의_X"];
-  }
-}
-
-
-checkAccountSwitchClick(mx, my) {
-  let profileX = 350;
-  let profileY = this.h - this.bottomNavH / 2;
-
-  let isProfileButton =
-    my > this.h - this.bottomNavH &&
-    dist(mx, my, profileX, profileY) < 25;
-
-  if (!isProfileButton) return false;
-
-  let now = millis();
-  let clickGap = now - this.lastAccountClickTime;
-
-  if (
-    clickGap >= this.minDoubleClickDelay &&
-    clickGap <= this.maxDoubleClickDelay
-  ) {
-    this.changeAccount();
-
-    this.lastAccountClickTime = 0;
-  } else {
-    this.lastAccountClickTime = now;
-  }
-
-  return true;
 }
