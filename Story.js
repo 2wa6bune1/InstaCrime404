@@ -13,18 +13,15 @@ class Story {
   }
 
   displayIcon(x, y) {
-  if (!this.isRead) {
-    
+  // cue가 false이고 읽었으면 회색, 그 외엔 컬러 링
+  if (!this.isRead || this.cue) {
     let steps = 60;
     for (let i = 0; i < steps; i++) {
       let angle = map(i, 0, steps, 0, TWO_PI);
       let t = map(i, 0, steps, 0, 1);
-
-    
       let r = lerp(255, 255, t);
       let g = lerp(80, 200, t);
       let b = lerp(150, 30, t);
-
       stroke(r, g, b);
       strokeWeight(4);
       noFill();
@@ -36,6 +33,7 @@ class Story {
     noFill();
     circle(x, y, 64);
   }
+  
   noStroke();
   fill(40);  circle(x, y, 56);
   fill(60);  circle(x, y, 48);
