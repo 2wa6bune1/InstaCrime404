@@ -5,7 +5,7 @@ class Story {
   constructor(name, color1, color2, bg, text, img = null, type = "default") {
     this.name = name;
     this.color1 = color1;
-    this.color2 = color2;
+    this.color2 = color2; 
     this.bg = bg;
     this.text = text;
     this.img = img;
