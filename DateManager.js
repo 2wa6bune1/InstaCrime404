@@ -9,16 +9,13 @@ class DateManager {
     // --- 💡 채팅에 등장할 인물들 명단 추가 ---
     this.users = {
       "주인공": new User("내 스토리", imgProfileMain),
-      "단짝_친구": new User("단짝_친구", imgProfileFriend),
-      "npc_01": new User("npc_01", imgProfileNpc),
-      "rival": new User("rival", imgProfileRival),
-      "편의점_알바": new User("편의점_알바", imgProfileAlba),
-      "김형사": new User("김형사", imgProfileCop),
-      "의문의_X": new User("의문의_X", imgProfileX),
-      "shop": new User("shop", imgProfileShop),
-      "shop_master": new User("shop_master", imgProfileShop),
-      "???": new User("???", imgProfileX),
-      "SYSTEM": new User("SYSTEM", imgProfileSystem),
+      "박서아": new User("@seoa.archive", imgProfileFriend),
+      "최지안": new User("@its_ji.anni", imgProfileNpc),
+      "정수아": new User("@sooah.jung", imgProfileRival),
+      "이서준": new User("@seo_jun.lee", imgProfileAlba),
+      "강하은": new User("@grace_haeun", imgProfileCop),
+      
+     
       // 채팅 전용
       "이서준": new User("이서준", imgProfileNpc),
       "엄마": new User("엄마", imgProfileNpc)
@@ -32,13 +29,13 @@ class DateManager {
 
     // ================= [ 1일차 ] =================
     if (this.currentDay === 1) {
-      dailyStories.push(new Story(this.users["단짝_친구"], color(255, 180, 100), color(255, 100, 100), color(255, 200, 150), "너도 그 이상한 소문 들었어?"));
-      dailyStories.push(new Story(this.users["단짝_친구"], color(255, 180, 100), color(255, 100, 100), color(255, 200, 150), "밤에 혼자 골목길 돌아다니지 마!"));
-      dailyStories.push(new Story(this.users["npc_01"], color(180, 80, 255), color(255, 80, 150), color(120, 90, 220), "오늘부터 새로운 단서 탐색 시작."));
-      dailyStories.push(new Story(this.users["rival"], color(80, 200, 255), color(180, 80, 255), color(80, 160, 220), "이번엔 절대 안 져. 내가 먼저 찾는다."));
-      dailyStories.push(new Story(this.users["편의점_알바"], color(100, 200, 100), color(50, 150, 50), color(80, 180, 80), "야간 알바 중... 오늘따라 손님이 없네."));
-      dailyStories.push(new Story(this.users["김형사"], color(100, 100, 255), color(50, 50, 200), color(50, 50, 150), "최근 이 근방에서 실종 신고가 급증하고 있습니다."));
-      dailyStories.push(new Story(this.users["의문의_X"], color(255, 50, 50), color(150, 0, 0), color(50, 0, 0), "다 지켜보고 있다."));
+      dailyStories.push(new Story(this.users["단짝_친구"], color(255), "너도 그 이상한 소문 들었어?"));
+      dailyStories.push(new Story(this.users["단짝_친구"], color(255), "밤에 혼자 골목길 돌아다니지 마!"));
+      dailyStories.push(new Story(this.users["npc_01"], color(255), "오늘부터 새로운 단서 탐색 시작."));
+      dailyStories.push(new Story(this.users["rival"], color(255), "이번엔 절대 안 져. 내가 먼저 찾는다."));
+      dailyStories.push(new Story(this.users["편의점_알바"], color(255), "야간 알바 중... 오늘따라 손님이 없네."));
+      dailyStories.push(new Story(this.users["김형사"], color(255), "최근 이 근방에서 실종 신고가 급증하고 있습니다."));
+      dailyStories.push(new Story(this.users["의문의_X"], color(255), "다 지켜보고 있다."));
 
       dailyPosts.push(new Post(this.users["단짝_친구"], "학교 앞", "오늘 날씨 완전 꿀꿀함 ☁️ 불안하게시리...", 12, color(200, 220, 240)));
       dailyPosts.push(new Post(this.users["npc_01"], "방구석", "첫 번째 단서를 정리 중입니다.", 10, color(240, 180, 130)));
