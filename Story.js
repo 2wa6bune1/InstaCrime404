@@ -53,3 +53,4 @@ class Story {
     ellipse(x, y + 13, 28, 22);
     strokeWeight(1);
   }
+}

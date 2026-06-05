@@ -1,5 +1,5 @@
 // ======================================================
-// StoryUploader.js
+// storyUploader.js
 // ======================================================
 class StoryUploader {
   constructor(instagramUI) {

@@ -24,7 +24,7 @@ class InstagramUI {
     this.nextStoryIndex = 0;
     this.stories = [];
     this.posts = [];
-    this.backupStories = null; // 하이라이트 기능 위해 백업 공간
+    this.backupStories = null; 
     this.storyGroups = [];
 
     this.storyDuration = 5000;
@@ -43,13 +43,11 @@ class InstagramUI {
     this.storyBuffer2 = createGraphics(this.w, this.h);
     this.webglBuffer = createGraphics(this.w, this.h, WEBGL);
 
-    // "main" = 주인공 본계정
-    // "sub" = 주인공의 부계정 / 의문의 계정
     this.currentAccount = "main";
     this.lastAccountClickTime = 0;
-    this.minDoubleClickDelay = 1;    // 0.001초
-    this.maxDoubleClickDelay = 500;   // 0.5초
-  }
+    this.minDoubleClickDelay = 1;    
+    this.maxDoubleClickDelay = 500;  
+
     this.dmScrollY = 0;
     this.dmTargetScrollY = 0;
     this.chatScrollY = 0;
@@ -61,7 +59,7 @@ class InstagramUI {
     this._chatDragDist = 0;
     this._chatDragMode = null;
     this.chatRooms = [];
-    this.loadChatData();
+  }
   
   loadData(storiesData, postsData) {
     this.stories = storiesData;
@@ -84,6 +82,10 @@ class InstagramUI {
         this.storyGroups.push({ name: s.name, firstIndex: i });
       }
     }
+  }
+
+  loadChatData(chatData) {
+    this.chatRooms = chatData;
   }
 
   addMyStory(img) {
@@ -205,11 +207,12 @@ class InstagramUI {
         }
       }
     }
-  }
-  if (this.currentScreen === "dmList" || this.currentScreen === "chatRoom") {
+
+    if (this.currentScreen === "dmList" || this.currentScreen === "chatRoom") {
       this.updateChatScroll(appMouse);
     }
     this.chatCursorBlink += deltaTime;
+  }
   
   handleAutomaticNext() {
     let prevStory = this.currentStory;
@@ -245,6 +248,11 @@ class InstagramUI {
       if (typeof storyUploader !== "undefined") {
         storyUploader.display(appMouse);
       }
+    } 
+    else if (this.currentScreen === "dmList") {
+      this.displayDMList(appMouse);
+    } else if (this.currentScreen === "chatRoom") {
+      this.displayChatRoom(appMouse);
     }
   }
 
@@ -294,11 +302,11 @@ class InstagramUI {
     text("Instagram", 18, 42);
 
     let headerY = 32;
-    let isHeartHover = appMouse && dist(appMouse.x, appMouse.y, 310, headerY) < 20;
-    let isDmHover = appMouse && dist(appMouse.x, appMouse.y, 355, headerY) < 20;
+    // 💡 하트 아이콘을 오른쪽 끝(355)으로 이동
+    let isHeartHover = appMouse && dist(appMouse.x, appMouse.y, 355, headerY) < 20;
 
     push();
-    translate(310, headerY);
+    translate(355, headerY);
     if (isHeartHover) scale(1.2);
     fill(isHeartHover ? color(255, 150, 150) : 255);
     noStroke();
@@ -307,37 +315,9 @@ class InstagramUI {
     text("♡", 0, 2);
     pop();
 
-    push();
-    translate(355, headerY);
-    if (isDmHover) scale(1.2);
-    stroke(isDmHover ? color(150, 200, 255) : 255);
-    strokeWeight(2);
-    noFill();
-    strokeJoin(ROUND);
-    beginShape();
-    vertex(-9, 5);
-    vertex(8, -8);
-    vertex(4, 9);
-    vertex(-1, 1);
-    endShape(CLOSE);
-    pop();
-
     stroke(50);
     line(0, 64, this.w, 64);
   }
-  
-   let unread = this.getUnreadCount();
-    if (unread > 0) {
-      noStroke();
-      fill(255, 60, 90);
-      circle(367, 22, 17);
-      fill(255);
-      textAlign(CENTER, CENTER);
-      textSize(10);
-      textStyle(BOLD);
-      text(unread > 9 ? "9+" : "" + unread, 367, 23);
-      textStyle(NORMAL);
-    }
   
   displayStories(scrolledMouse) {
     fill(30);
@@ -463,12 +443,28 @@ class InstagramUI {
         noStroke();
         triangle(-2, -4, -2, 4, 4, 0);
       } else if (i === 2) {
+        // 💡 하단바 중앙의 종이비행기(DM) 아이콘 부분
         beginShape();
         vertex(-9, 5);
         vertex(8, -8);
         vertex(4, 9);
         vertex(-1, 1);
         endShape(CLOSE);
+        
+        // 안읽음 알림을 이곳에 그림
+        let unread = this.getUnreadCount();
+        if (unread > 0) {
+          push();
+          noStroke();
+          fill(255, 60, 90);
+          circle(8, -8, 15);
+          fill(255);
+          textAlign(CENTER, CENTER);
+          textSize(9);
+          textStyle(BOLD);
+          text(unread > 9 ? "9+" : "" + unread, 8, -7);
+          pop();
+        }
       } else if (i === 3) {
         circle(-2, -2, 12);
         line(2.5, 2.5, 8, 8);
@@ -606,7 +602,9 @@ class InstagramUI {
       }
     }
 
-    s.user.displayProfile(32, 48, 32, g);
+    if (s.user && typeof s.user.displayProfile === 'function') {
+        s.user.displayProfile(32, 48, 32, g);
+    }
 
     g.fill(255);
     g.textAlign(LEFT, BASELINE);
@@ -659,21 +657,16 @@ class InstagramUI {
     g.strokeWeight(1);
   }
 
-  // 계정 전환 함수
   changeAccount() {
     if (this.currentAccount === "main") {
       this.currentAccount = "sub";
     } else {
       this.currentAccount = "main";
     }
-
-    // 계정이 바뀌면 피드를 맨 위로 올림
-    // 필요 없으면 아래 두 줄은 삭제 가능
     this.targetScrollY = 0;
     this.scrollY = 0;
   }
 
-  // 현재 선택된 계정의 User 객체를 가져오는 함수
   getCurrentAccountUser() {
     if (typeof dateManager === "undefined") return null;
 
@@ -683,6 +676,7 @@ class InstagramUI {
       return dateManager.users["의문의_X"];
     }
   }
+
   checkAccountSwitchClick(mx, my) {
     let profileX = 350;
     let profileY = this.h - this.bottomNavH / 2;
@@ -701,7 +695,6 @@ class InstagramUI {
       clickGap <= this.maxDoubleClickDelay
     ) {
       this.changeAccount();
-
       this.lastAccountClickTime = 0;
     } else {
       this.lastAccountClickTime = now;
@@ -711,10 +704,28 @@ class InstagramUI {
   }
   
   handleClick(mx, my) {
+    // 💡 하단 네비게이션 바 기능 활성화 (스토리 화면이 아닐 때만)
+    if (this.currentScreen !== "story" && this.currentScreen !== "storyUpload") {
+      if (my > this.h - this.bottomNavH) {
+        // 홈 버튼 (맨 왼쪽) 클릭 시 피드 최상단으로
+        if (abs(mx - 40) < 25) {
+          this.currentScreen = "feed";
+          this.targetScrollY = 0;
+          return;
+        }
+        // DM 버튼 (가운데 종이비행기) 클릭 시 채팅방 목록 오픈
+        if (abs(mx - 195) < 25) {
+          this.openDMList();
+          return;
+        }
+      }
+    }
+
     if (this.currentScreen === "feed") {
       let contentY = my + this.scrollY;
       this.checkStoryClick(mx, contentY);
       this.checkLikeClick(mx, contentY);
+      
     } else if (this.currentScreen === "story") {
       if (mx > this.w - 50 && my < 80) {
         this.currentScreen = "feed";
@@ -724,9 +735,16 @@ class InstagramUI {
       if (typeof storyUploader !== "undefined") {
         storyUploader.handleClick(mx, my);
       }
+    } 
+    else if (this.currentScreen === "dmList") {
+      this.handleDMListClick(mx, my);
+    } else if (this.currentScreen === "chatRoom") {
+      this.handleChatRoomClick(mx, my);
     }
   }
-   if (this.currentScreen === "dmList") {
+
+  handleWheel(event) {
+    if (this.currentScreen === "dmList") {
       this.dmTargetScrollY = constrain(this.dmTargetScrollY + event.deltaY * 0.7, 0, this.getDMMaxScroll());
       return;
     }
@@ -735,8 +753,8 @@ class InstagramUI {
       return;
     }
 
-  handleWheel(event) {
     if (this.currentScreen !== "feed") return;
+    
     if (abs(event.deltaX) > 0) {
       this.targetStoryScrollX += event.deltaX * 0.7;
     }
@@ -768,7 +786,7 @@ class InstagramUI {
     let scrollMx = mx + this.storyScrollX;
 
     if (dist(scrollMx, my, 45, 105) < 35) {
-      if (typeof storyUploader !== 'undefined') {
+      if (typeof storyUploader !== 'undefined' && typeof storyUploader.open === 'function') {
         storyUploader.open();
       }
       return;
@@ -834,101 +852,7 @@ class InstagramUI {
     drawingContext.closePath();
     drawingContext.clip();
   }
-}
-loadChatData() {
-    const u = (name) =>
-      (typeof dateManager !== "undefined" && dateManager.users && dateManager.users[name])
-        ? dateManager.users[name]
-        : null;
- 
-    // messages: { text, sent }   sent=true 면 "내가 보낸" 말풍선(오른쪽 파란색)
-    this.chatRooms = [
-      {
-        name: "의문의_X",
-        user: u("의문의_X"),
-        avatarColor: [120, 90, 200],
-        active: true,
-        activeText: "활동 중",
-        unread: true,
-        seen: false,
-        time: "1분",
-        messages: [
-          { text: "자니?", sent: false },
-          { text: "네가 올린 스토리 봤어", sent: false },
-          { text: "...누구세요?", sent: true },
-          { text: "곧 알게 될 거야 🙂", sent: false },
-        ],
-      },
-      {
-        name: "이서준",
-        user: u("이서준"),
-        avatarColor: [70, 140, 230],
-        active: true,
-        activeText: "방금 활동",
-        unread: true,
-        seen: false,
-        time: "12분",
-        messages: [
-          { text: "내일 약속 그대로지?", sent: false },
-          { text: "ㅇㅇ 7시 강남역", sent: true },
-          { text: "오케이 늦지마ㅋㅋ", sent: false },
-        ],
-      },
-      {
-        name: "김하늘",
-        user: u("김하늘"),
-        avatarColor: [230, 120, 150],
-        active: false,
-        unread: false,
-        seen: true,
-        time: "1시간",
-        messages: [
-          { text: "사진 잘 받았어 고마워!", sent: false },
-          { text: "별말씀ㅎㅎ 잘 나왔더라", sent: true },
-        ],
-      },
-      {
-        name: "동아리 단톡방",
-        user: null,
-        avatarColor: [90, 180, 160],
-        active: false,
-        unread: true,
-        seen: false,
-        time: "3시간",
-        messages: [
-          { text: "이번 주 모임 토요일 2시!", sent: false },
-          { text: "장소는 동방입니다 📍", sent: false },
-        ],
-      },
-      {
-        name: "박지민",
-        user: u("박지민"),
-        avatarColor: [200, 160, 80],
-        active: false,
-        unread: false,
-        seen: true,
-        time: "어제",
-        messages: [
-          { text: "과제 자료 공유해줘서 고마워", sent: false },
-          { text: "ㄱㄱ 화이팅", sent: true },
-        ],
-      },
-      {
-        name: "엄마",
-        user: u("엄마"),
-        avatarColor: [180, 110, 110],
-        active: false,
-        unread: false,
-        seen: true,
-        time: "2일",
-        messages: [
-          { text: "밥은 챙겨 먹고 다니니?", sent: false },
-          { text: "응 잘 먹고 있어요!", sent: true },
-        ],
-      },
-    ];
-  }
- 
+
   getUnreadCount() {
     if (!this.chatRooms) return 0;
     let n = 0;
@@ -947,7 +871,7 @@ loadChatData() {
   openChatRoom(index) {
     this.currentChatRoom = index;
     let room = this.chatRooms[index];
-    room.unread = false;  // 읽음 처리 → 파란 점 사라짐, 글씨 일반체
+    room.unread = false; 
     this.currentScreen = "chatRoom";
     this.chatInputText = "";
     this.chatTargetScrollY = this.getChatMaxScroll();
@@ -961,10 +885,9 @@ loadChatData() {
     room.seen = false;
     room.time = "지금";
     this.chatInputText = "";
-    this.chatTargetScrollY = 1e9; // updateChatScroll에서 maxScroll로 보정됨
+    this.chatTargetScrollY = 1e9; 
   }
  
-  // (선택) 키보드 입력 ─ 메인 스케치 keyTyped / keyPressed 에서 호출
   handleChatKeyTyped(k) {
     if (this.currentScreen !== "chatRoom") return false;
     if (k && k.length === 1) { this.chatInputText += k; return true; }
@@ -1027,8 +950,8 @@ loadChatData() {
   }
  
   handleDMListClick(mx, my) {
-    if (mx < 52 && my < 60) { this.currentScreen = "feed"; return; }  // 뒤로가기
-    if (this._chatDragDist > 6) return;  // 드래그였으면 무시
+    if (mx < 52 && my < 60) { this.currentScreen = "feed"; return; } 
+    if (this._chatDragDist > 6) return; 
  
     let listTop = 112, itemH = 72;
     let y0 = listTop - this.dmScrollY;
@@ -1039,11 +962,10 @@ loadChatData() {
   }
  
   handleChatRoomClick(mx, my) {
-    if (mx < 52 && my < 60) { this.currentScreen = "dmList"; return; }  // 뒤로가기
+    if (mx < 52 && my < 60) { this.currentScreen = "dmList"; return; } 
  
     let inputH = 60, y = this.h - inputH;
     if (my > y) {
-      // 입력창 오른쪽(보내기 / 하트) 영역
       if (mx > this.w - 72) {
         let t = this.chatInputText.trim();
         if (t.length) this.sendMessage(t);
@@ -1075,7 +997,6 @@ loadChatData() {
   displayDMList(appMouse) {
     const w = this.w, h = this.h;
  
-    // --- 스크롤되는 목록 (클리핑) ---
     push();
     drawingContext.save();
     this.createRectClip(0, 112, w, h - 112);
@@ -1088,18 +1009,15 @@ loadChatData() {
     drawingContext.restore();
     pop();
  
-    // --- 상단 고정 헤더 ---
     fill(20); noStroke();
     rect(0, 0, w, 112, 25, 25, 0, 0);
  
-    // 뒤로가기 화살표
     let backHover = appMouse && dist(appMouse.x, appMouse.y, 24, 30) < 22;
     stroke(255); strokeWeight(2.4); noFill(); strokeJoin(ROUND); strokeCap(ROUND);
     push(); translate(22, 30); if (backHover) scale(1.15);
     line(6, -8, -4, 0); line(-4, 0, 6, 8);
     pop();
  
-    // 내 계정 이름 + 드롭다운
     let myName = this.currentAccount === "main" ? "주인공" : "의문의_X";
     noStroke(); fill(255);
     textAlign(LEFT, CENTER); textStyle(BOLD); textSize(19);
@@ -1109,14 +1027,12 @@ loadChatData() {
     line(50 + nameW + 9, 27, 50 + nameW + 14, 32);
     line(50 + nameW + 14, 32, 50 + nameW + 19, 27);
  
-    // 새 메시지(작성) 아이콘
     stroke(255); strokeWeight(2); noFill(); strokeJoin(ROUND);
     push(); translate(w - 28, 30);
     rect(-9, -9, 18, 18, 4);
     line(-1, 1, 6, -6);
     pop();
  
-    // 검색바
     noStroke(); fill(38);
     rect(15, 64, w - 30, 34, 12);
     push(); translate(34, 81);
@@ -1136,7 +1052,6 @@ loadChatData() {
     let hover = appMouse && appMouse.y > Math.max(y, 112) && appMouse.y < y + itemH;
     if (hover) { noStroke(); fill(255, 12); rect(0, y, w, itemH); }
  
-    // 아바타 + 활동중 표시
     let ax = 42, asz = 52;
     this.drawChatAvatar(room, ax, cy, asz);
     if (room.active) {
@@ -1144,14 +1059,12 @@ loadChatData() {
       fill(80, 220, 120); circle(ax + 18, cy + 17, 11);
     }
  
-    // 이름
     let tx = ax + 40;
     noStroke(); fill(255);
     textAlign(LEFT, BASELINE); textSize(15);
     textStyle(room.unread ? BOLD : NORMAL);
     text(room.name, tx, cy - 3);
  
-    // 미리보기 + 시간
     let last = room.messages.length ? room.messages[room.messages.length - 1] : null;
     let preview = last ? (last.sent ? "나: " : "") + last.text : "";
     if (preview.length > 20) preview = preview.slice(0, 20) + "…";
@@ -1163,7 +1076,6 @@ loadChatData() {
     textStyle(NORMAL); fill(120);
     text("  ·  " + room.time, tx + pw, cy + 16);
  
-    // 오른쪽: 안읽음=파란 점 / 읽음=카메라 아이콘
     if (room.unread) {
       noStroke(); fill(40, 130, 255);
       circle(w - 28, cy, 11);
@@ -1204,7 +1116,6 @@ loadChatData() {
     return { items, totalH: y + 8 };
   }
  
-  // 한글/영문 모두 자연스럽게 줄바꿈
   wrapText(str, maxW) {
     str = String(str);
     let lines = [], cur = "", lastSpace = -1;
@@ -1228,7 +1139,6 @@ loadChatData() {
     const w = this.w, h = this.h;
     let headerH = 70, inputH = 60, padX = 13, padY = 9, lineH = 19;
  
-    // --- 메시지 영역 (클리핑 + 스크롤) ---
     push();
     drawingContext.save();
     this.createRectClip(0, headerH, w, h - headerH - inputH);
@@ -1255,7 +1165,6 @@ loadChatData() {
       }
     }
  
-    // "읽음" 표시 (마지막으로 보낸 메시지 아래)
     if (this.room().seen && lastSent) {
       noStroke(); fill(150);
       textAlign(RIGHT, TOP); textSize(11);
@@ -1275,21 +1184,18 @@ loadChatData() {
     fill(20); noStroke();
     rect(0, 0, w, headerH, 25, 25, 0, 0);
  
-    // 뒤로가기
     let backHover = appMouse && dist(appMouse.x, appMouse.y, 20, 35) < 22;
     stroke(255); strokeWeight(2.4); noFill(); strokeJoin(ROUND); strokeCap(ROUND);
     push(); translate(20, 35); if (backHover) scale(1.15);
     line(6, -8, -4, 0); line(-4, 0, 6, 8);
     pop();
  
-    // 아바타 + 활동중
     this.drawChatAvatar(room, 56, 35, 38);
     if (room.active) {
       noStroke(); fill(20); circle(56 + 13, 35 + 13, 12);
       fill(80, 220, 120); circle(56 + 13, 35 + 13, 8);
     }
  
-    // 이름 / 상태
     noStroke(); fill(255);
     textAlign(LEFT, BASELINE); textStyle(BOLD); textSize(15);
     text(room.name, 84, room.active ? 32 : 40);
@@ -1298,7 +1204,6 @@ loadChatData() {
       text(room.activeText || "활동 중", 84, 48);
     }
  
-    // 우측 아이콘: 전화 / 영상 / 정보
     stroke(255); strokeWeight(2); noFill(); strokeJoin(ROUND);
     push(); translate(w - 92, 35); rectMode(CENTER);
     rect(0, 0, 13, 19, 3); line(-3, 7, 3, 7);
@@ -1326,7 +1231,6 @@ loadChatData() {
     rect(0, y, w, inputH, 0, 0, 25, 25);
     stroke(45); strokeWeight(1); line(0, y, w, y);
  
-    // 카메라 버튼(왼쪽 파란 원)
     noStroke(); fill(60, 120, 255);
     circle(28, y + inputH / 2, 34);
     stroke(255); strokeWeight(1.6); noFill(); strokeJoin(ROUND);
@@ -1335,7 +1239,6 @@ loadChatData() {
     line(-4, -4, -2, -7); line(-2, -7, 2, -7); line(2, -7, 4, -4);
     pop();
  
-    // 입력 pill
     let px = 50, pw = w - 50 - 14, ph = 38, py = y + (inputH - ph) / 2;
     noStroke(); fill(36);
     rect(px, py, pw, ph, 19);
@@ -1358,3 +1261,4 @@ loadChatData() {
     }
     textStyle(NORMAL);
   }
+}

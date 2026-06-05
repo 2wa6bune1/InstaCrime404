@@ -13,7 +13,7 @@ let imgProfileMain, imgProfileFriend, imgProfileNpc, imgProfileRival;
 let imgProfileAlba, imgProfileCop, imgProfileX, imgProfileShop, imgProfileSystem;
 
 function preload() {
-   imgProfileFriend = loadImage('friendProfile.jpg');
+   // imgProfileFriend = loadImage('friendProfile.jpg');
 }
 
 function setup() {
@@ -25,12 +25,15 @@ function setup() {
   phone = new PhoneUI(); 
   dateManager.loadDailyData(); 
 
-  //하이라이트 추가하는 곳 
-  clueHighlight = new Highlight("결정적 증거",200,150)
-  clueHighlight.addHighlight("")
+  // --- 하이라이트 추가하는 곳 (수정됨) ---
+  clueHighlight = new Highlight("결정적 증거", 200, 150);
+  
+  // 에러 방지: 빈 글씨("")가 아니라 임시 Story 객체를 넣어야 합니다.
+  let dummyUser = dateManager.users["단짝_친구"];
+  clueHighlight.addHightlight(new Story(dummyUser, color(0), color(0), color(0), "하이라이트 테스트"));
+  // ----------------------------------------
 
   storyUploader = new StoryUploader(phone.instagram); 
-
 }
 
 function draw() {
@@ -58,18 +61,19 @@ function draw() {
       room.goNextDay = false;
     }
 
-
     room.display();
     phone.update();
 
-    //하이라이트
+    // --- 괄호 꼬임 및 함수 호출 오류 수정 ---
     if (phone.instagram.currentScreen === "profile") {
-      clueHighlight.displayIcon; 
-    //스토리 대신 하이라이트 틀었던거 --> 정보 복구하는 곳
-    if (phone.instagram.backupStories && phone.instagram.currentScreen !== "story") {  //스토리 화면 끝났을 때 
-      phone.instagram.stories = phone.instagram.backupStories; // 원본을 사용자한테 보여주는 공간으로 다시 이동시킴 (하이라이트 할당했었음) 
-      phone.instagram.backupStories = null; // 금고 비우기
-      phone.instagram.currentScreen = "feed"; // 나중에 profile로 바꿔줘야 함 
+      clueHighlight.displayIcon(false); // 괄호() 추가!
+    } // if문 닫기 추가!
+    
+    // 스토리 대신 하이라이트 틀었던거 --> 정보 복구하는 곳
+    if (phone.instagram.backupStories && phone.instagram.currentScreen !== "story") {  
+      phone.instagram.stories = phone.instagram.backupStories; 
+      phone.instagram.backupStories = null; 
+      phone.instagram.currentScreen = "feed"; 
     }
 
     phone.display();
@@ -100,10 +104,9 @@ function mousePressed() {
   }
 }
 
-
 function mouseWheel(event) {
   if (gameState === "PLAY") {
     phone.handleMouseWheel(event);
   }
   return false;
-}}
+} 
