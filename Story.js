@@ -2,14 +2,25 @@
 // story.js
 // ======================================================
 class Story {
-  constructor(name, img = null, type = "default") {
-    this.name = name;
-    this.img = img;
+  // bgOrImg 자리에 색깔(color)을 넣으면 배경색이 되고, "사진.jpg"를 넣으면 자동으로 사진이 됩니다!
+  constructor(userObj, bgOrImg, text = "", type = "default") {
+    this.user = userObj; 
+    this.name = userObj ? userObj.name : "Unknown"; 
+    this.text = text;
     this.isRead = false; 
     this.type = type;
+
+    // 전달받은 값이 글자(파일 이름)인지 색상인지 똑똑하게 구분
+    if (typeof bgOrImg === 'string' && bgOrImg !== "") {
+      this.img = loadImage(bgOrImg); // 글자면 이미지 파일로 불러오기
+      this.bg = color(20);
+    } else {
+      this.img = null;
+      this.bg = bgOrImg || color(20); // 색상이면 배경색으로 지정
+    }
   }
 
-  displayIcon(x, y) {
+  displayIcon(x, y, target = window) {
     if (!this.isRead || this.cue) {
       let steps = 60;
       for (let i = 0; i < steps; i++) {
@@ -18,38 +29,33 @@ class Story {
         let r, g, b;
 
         if (this.type === "friend") {
-          // 초록 계열
-          r = lerp(50, 150, t);
-          g = lerp(200, 255, t);
-          b = lerp(80, 50, t);
+          r = lerp(50, 150, t); g = lerp(200, 255, t); b = lerp(80, 50, t);
         } else {
-          // 기존 핑크-오렌지 계열
-          r = lerp(255, 255, t);
-          g = lerp(80, 200, t);
-          b = lerp(150, 30, t);
+          r = lerp(255, 255, t); g = lerp(80, 200, t); b = lerp(150, 30, t);
         }
 
-        stroke(r, g, b);
-        strokeWeight(4);
-        noFill();
-        arc(x, y, 64, 64, angle, angle + TWO_PI / steps + 0.01);
+        target.stroke(r, g, b);
+        target.strokeWeight(4);
+        target.noFill();
+        target.arc(x, y, 64, 64, angle, angle + TWO_PI / steps + 0.01);
       }
     } else {
-      stroke(80);
-      strokeWeight(4);
-      noFill();
-      circle(x, y, 64);
+      target.stroke(80);
+      target.strokeWeight(4);
+      target.noFill();
+      target.circle(x, y, 64);
     }
 
-    noStroke();
-    fill(40);  circle(x, y, 56);
-    fill(60);  circle(x, y, 48);
-    fill(150);
-    circle(x, y - 5, 14);
-    ellipse(x, y + 13, 28, 22);
-    strokeWeight(1);
+    target.noStroke();
+    
+    // 에러 방지: 유저 정보가 있을 때만 프사 그리기
+    if (this.user && typeof this.user.displayProfile === 'function') {
+      this.user.displayProfile(x, y, 56, target);
+    } else {
+      target.fill(40);  target.circle(x, y, 56);
+      target.fill(60);  target.circle(x, y, 48);
+    }
+    
+    target.strokeWeight(1);
   }
 }
-
-
-

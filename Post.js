@@ -4,7 +4,7 @@
 class Post {
   constructor(userObj, location, caption, likes, bg, img = null) {
     this.userObj = userObj;
-    this.user = userObj.name; 
+    this.user = userObj?.name; 
     this.location = location;
     this.caption = caption;
     this.likes = likes;
