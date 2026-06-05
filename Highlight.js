@@ -2,7 +2,7 @@
 // Highlight.js
 // ======================================================
 class Highlight {
-  constructor(title) {
+  constructor(title,x,y) {
     this.title = title;
     this.highlights = []; // 기존 Story 객체들을 담을 배열
     this.x = x; 
@@ -58,13 +58,30 @@ class Highlight {
  checkClick(mx, my, instagramUI) {
     if (dist(mx, my, this.x, this.y) < 30) {
       this.play(instagramUI); 
-      return true; 
+      return true; // 클릭 처리 후에는 true 반환하게끔
     }
     return false; 
   }
 
+ play(instagramUI) {
+    // 사진이 없을 때 실행 취소
+    if (this.highlights.length === 0) return;
 
+    // 원본 보호; 원래 스토리 사진들을 백업
+    if (!instagramUI.backupStories) { //백업하는 곳이 비어 있을 때만 (하이라이트로 덮어씌워지는 버그 방지용)
+      instagramUI.backupStories = instagramUI.stories; // 새 객체 만들어서 원본 스토리들 저장
+    }
 
+    // 필름 교체; 원래 스토리 보여주는 데에다가 하이라이트 사진 덮어씌우기
+    instagramUI.stories = this.highlights;
+    
+    // 초기화. 첫 번째 사진부터, 타이머는 0초부터로 리셋해야됨
+    instagramUI.currentStory = 0;           
+    instagramUI.storyElapsedTime = 0;       
+    instagramUI.isTransitioning = false;    
+    
+    // 인스타그램 UI한테 스토리 그리라고 함
+    instagramUI.currentScreen = "story";
 
   }
 }

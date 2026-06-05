@@ -24,6 +24,7 @@ class InstagramUI {
     this.nextStoryIndex = 0;
     this.stories = [];
     this.posts = [];
+    this.backupStories = null; // 하이라이트 기능 위해 백업 공간
     this.storyGroups = [];
 
     this.storyDuration = 5000;
