@@ -33,20 +33,14 @@ class DateManager {
 
     // ================= [ 1일차 ] =================
     if (this.currentDay === 1) {
-      dailyStories.push(new Story(this.users["최지안"], jian1_1));
-      dailyStories.push(new Story(this.users["최지안"], jian1_2));
-      dailyStories.push(new Story(this.users["최지안"], jian1_3));
-      dailyStories.push(new Story(this.users["최지안"], jian1_4));
-      dailyStories.push(new Story(this.users["부계"], accountX1));
-
-      dailyStories.push(new Story(this.users["정수아"], sooah1));
-      dailyStories.push(new Story(this.users["강하은"], haeun1));
-
-      dailyStories.push(new Story(this.users["최지안"], color(255), "오늘부터 새로운 단서 탐색 시작."));
-      dailyStories.push(new Story(this.users["정수아"], color(255), "이번엔 절대 안 져. 내가 먼저 찾는다."));
-      dailyStories.push(new Story(this.users["이서준"], color(255), "야간 알바 중... 오늘따라 손님이 없네."));
-      dailyStories.push(new Story(this.users["강하은"], color(255), "최근 이 근방에서 실종 신고가 급증하고 있습니다."));
-      dailyStories.push(new Story(this.users["의문의_X"], color(255), "다 지켜보고 있다."));
+      dailyStories.push(new Story(this.users["최지안"], jian1-1.png));
+      dailyStories.push(new Story(this.users["최지안"], jian1-2.png));
+      dailyStories.push(new Story(this.users["최지안"], jian1-3.png));
+      dailyStories.push(new Story(this.users["최지안"], jian1-4.png));
+      dailyStories.push(new Story(this.users["부계"], X1.png));
+      dailyStories.push(new Story(this.users["정수아"], sooah1.JPG));
+      dailyStories.push(new Story(this.users["이서준"], seojun1.png));
+      
 
       dailyPosts.push(new Post(this.users["박서아"], "학교 앞", "오늘 날씨 완전 꿀꿀함 ☁️ 불안하게시리...", 12, color(200, 220, 240)));
       dailyPosts.push(new Post(this.users["최지안"], "방구석", "첫 번째 단서를 정리 중입니다.", 10, color(240, 180, 130)));
@@ -59,13 +53,12 @@ class DateManager {
     } 
     // ================= [ 2일차 ] =================
     else if (this.currentDay === 2) {
-      dailyStories.push(new Story(this.users["최지안"], jian2_1));
-      dailyStories.push(new Story(this.users["최지안"], jian2_2));
-      dailyStories.push(new Story(this.users["최지안"], jian2_3));
-      dailyStories.push(new Story(this.users["최지안"], jian2_4));
+      dailyStories.push(new Story(this.users["최지안"], jian2-1.png));
+      dailyStories.push(new Story(this.users["최지안"], jian2-2.png));
+      dailyStories.push(new Story(this.users["최지안"], jian2-3.png));
+      dailyStories.push(new Story(this.users["최지안"], jian2-4.png));
 
-      dailyStories.push(new Story(this.users["강하은"], haeun2));
-      dailyStories.push(new Story(this.users["부계"], accountX2));
+      dailyStories.push(new Story(this.users["부계"], X2.png));
 
       dailyPosts.push(new Post(this.users["shop_master"], "아이템 상점", "신규 탐색 장비 대량 입고되었습니다. 서두르세요.", 34, color(140, 190, 230)));
       dailyPosts.push(new Post(this.users["최지안"], "상점 앞", "골드가 부족해... 퀘스트 노가다 뛰어야겠다.", 15, color(120, 90, 220)));
