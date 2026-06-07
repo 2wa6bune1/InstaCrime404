@@ -37,7 +37,7 @@ class DateManager {
       dailyStories.push(new Story(this.users["최지안"], jian1_2));
       dailyStories.push(new Story(this.users["최지안"], jian1_3));
       dailyStories.push(new Story(this.users["최지안"], jian1_4));
-      dailyStories.push(new Story(this.users["부계"], X1));
+      dailyStories.push(new Story(this.users["부계"], accountX1));
       dailyStories.push(new Story(this.users["정수아"], sooah1_1));
       dailyStories.push(new Story(this.users["이서준"], seojun1));
       
@@ -58,7 +58,7 @@ class DateManager {
       dailyStories.push(new Story(this.users["최지안"], jian2_3));
       dailyStories.push(new Story(this.users["최지안"], jian2_4));
 
-      dailyStories.push(new Story(this.users["부계"], X2));
+      dailyStories.push(new Story(this.users["부계"], accountX2));
 
       dailyStories.push(new Story(this.users["정수아"], jian2_1));
       dailyStories.push(new Story(this.users["정수아"], jian2_2));
