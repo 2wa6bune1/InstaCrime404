@@ -68,8 +68,9 @@ class DateManager {
       dailyStories.push(new Story(this.users["이서준"], seojun2_2, "", "friend"));
 
   
-      dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "부산 20대 대학생 살인사건, 교살 정확 확실. 흉기는 아직 발견되지 않아...", 241, color(20), news3));
+  
       dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "아이돌 그룹 루미에, 정규 2집 컴백 예고", 178, color(20), news6));
+      dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "부산 20대 대학생 살인사건, 교살 정확 확실. 흉기는 아직 발견되지 않아...", 241, color(20), news3));
       
       
       this.unlockedFeatures.chat = true;
