@@ -42,10 +42,9 @@ class DateManager {
       dailyStories.push(new Story(this.users["이서준"], seojun1));
       
 
-      dailyPosts.push(new Post(this.users["박서아"], "학교 앞", "오늘 날씨 완전 꿀꿀함 ☁️ 불안하게시리...", 12, color(200, 220, 240)));
-      dailyPosts.push(new Post(this.users["최지안"], "방구석", "첫 번째 단서를 정리 중입니다.", 10, color(240, 180, 130)));
-      dailyPosts.push(new Post(this.users["정수아"], "골목길", "너보다 한 발 앞서있다. 따라올 테면 따라와 봐.", 22, color(170, 130, 220)));
-      
+      dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "부산에서 20대 여성, 숨진 채 발견", 328, color(20), news1));
+      dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "배우 한서윤, 새 로맨스 영화 주연 확정", 42, color(20), news4));
+
       dailyChats.push({
         name: "엄마", user: this.users["엄마"], avatarColor: [180, 110, 110], active: false, unread: true, seen: false, time: "방금",
         messages: [{ text: "밥은 챙겨 먹고 다니니?", sent: false }]
@@ -69,10 +68,9 @@ class DateManager {
       dailyStories.push(new Story(this.users["이서준"], seojun2_2, "", "friend"));
 
   
-
-
-      dailyPosts.push(new Post(this.users["shop_master"], "아이템 상점", "신규 탐색 장비 대량 입고되었습니다. 서두르세요.", 34, color(140, 190, 230)));
-      dailyPosts.push(new Post(this.users["최지안"], "상점 앞", "골드가 부족해... 퀘스트 노가다 뛰어야겠다.", 15, color(120, 90, 220)));
+      dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "부산 29대 대학생 살인사건, 연쇄살인 수사로 전환", 241, color(20), news2));
+      dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "아이돌 그룹 루미에, 정규 2집 컴백 예고", 178, color(20), news6));
+      
       
       this.unlockedFeatures.chat = true;
 
@@ -107,7 +105,7 @@ class DateManager {
       dailyStories.push(new Story(this.users["최지안"], jian3_2));
       dailyStories.push(new Story(this.users["최지안"], jian3_3));
       
-      dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "부산 20대 대학생 살인사건, 연쇄살인 수사로 전환", 104, color(20), news3));
+      dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "부산 20대 대학생 살인사건, 연쇄살인 수사로 전환", 104, color(20), news2));
       dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "영화 블루 아크 개봉 첫 주 예매 1위! \n@야 나랑 이거 볼래?", 254, color(20), news7));
       
       dailyChats.push({
