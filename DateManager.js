@@ -33,13 +33,13 @@ class DateManager {
 
     // ================= [ 1일차 ] =================
     if (this.currentDay === 1) {
-      dailyStories.push(new Story(this.users["최지안"], jian1-1.png));
-      dailyStories.push(new Story(this.users["최지안"], jian1-2.png));
-      dailyStories.push(new Story(this.users["최지안"], jian1-3.png));
-      dailyStories.push(new Story(this.users["최지안"], jian1-4.png));
-      dailyStories.push(new Story(this.users["부계"], X1.png));
-      dailyStories.push(new Story(this.users["정수아"], sooah1.JPG));
-      dailyStories.push(new Story(this.users["이서준"], seojun1.png));
+      dailyStories.push(new Story(this.users["최지안"], jian1_1));
+      dailyStories.push(new Story(this.users["최지안"], jian1_2));
+      dailyStories.push(new Story(this.users["최지안"], jian1_3));
+      dailyStories.push(new Story(this.users["최지안"], jian1_4));
+      dailyStories.push(new Story(this.users["부계"], X1));
+      dailyStories.push(new Story(this.users["정수아"], sooah1_1));
+      dailyStories.push(new Story(this.users["이서준"], seojun1));
       
 
       dailyPosts.push(new Post(this.users["박서아"], "학교 앞", "오늘 날씨 완전 꿀꿀함 ☁️ 불안하게시리...", 12, color(200, 220, 240)));
@@ -53,20 +53,20 @@ class DateManager {
     } 
     // ================= [ 2일차 ] =================
     else if (this.currentDay === 2) {
-      dailyStories.push(new Story(this.users["최지안"], jian2-1.png));
-      dailyStories.push(new Story(this.users["최지안"], jian2-2.png));
-      dailyStories.push(new Story(this.users["최지안"], jian2-3.png));
-      dailyStories.push(new Story(this.users["최지안"], jian2-4.png));
+      dailyStories.push(new Story(this.users["최지안"], jian2_1));
+      dailyStories.push(new Story(this.users["최지안"], jian2_2));
+      dailyStories.push(new Story(this.users["최지안"], jian2_3));
+      dailyStories.push(new Story(this.users["최지안"], jian2_4));
 
-      dailyStories.push(new Story(this.users["부계"], X2.png));
+      dailyStories.push(new Story(this.users["부계"], X2));
 
-      dailyStories.push(new Story(this.users["정수아"], jian2-1.png));
-      dailyStories.push(new Story(this.users["정수아"], jian2-2.png));
-      dailyStories.push(new Story(this.users["정수아"], jian2-3.png));
-      dailyStories.push(new Story(this.users["정수아"], jian2-4.png));
+      dailyStories.push(new Story(this.users["정수아"], jian2_1));
+      dailyStories.push(new Story(this.users["정수아"], jian2_2));
+      dailyStories.push(new Story(this.users["정수아"], jian2_3));
+      dailyStories.push(new Story(this.users["정수아"], jian2_4));
 
-      dailyStories.push(new Story(this.users["이서준"], seojun2-1.png));
-      dailyStories.push(new Story(this.users["이서준"], seojun2-2.png, "", "friend"));
+      dailyStories.push(new Story(this.users["이서준"], seojun2_1));
+      dailyStories.push(new Story(this.users["이서준"], seojun2_2, "", "friend"));
 
   
 
