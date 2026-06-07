@@ -60,6 +60,17 @@ class DateManager {
 
       dailyStories.push(new Story(this.users["부계"], X2.png));
 
+      dailyStories.push(new Story(this.users["정수아"], jian2-1.png));
+      dailyStories.push(new Story(this.users["정수아"], jian2-2.png));
+      dailyStories.push(new Story(this.users["정수아"], jian2-3.png));
+      dailyStories.push(new Story(this.users["정수아"], jian2-4.png));
+
+      dailyStories.push(new Story(this.users["이서준"], seojun2-1.png));
+      dailyStories.push(new Story(this.users["이서준"], seojun2-2.png, "", "friend"));
+
+  
+
+
       dailyPosts.push(new Post(this.users["shop_master"], "아이템 상점", "신규 탐색 장비 대량 입고되었습니다. 서두르세요.", 34, color(140, 190, 230)));
       dailyPosts.push(new Post(this.users["최지안"], "상점 앞", "골드가 부족해... 퀘스트 노가다 뛰어야겠다.", 15, color(120, 90, 220)));
       
