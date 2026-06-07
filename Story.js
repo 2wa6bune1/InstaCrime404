@@ -4,19 +4,22 @@
 class Story {
   // bgOrImg 자리에 색깔(color)을 넣으면 배경색이 되고, "사진.jpg"를 넣으면 자동으로 사진이 됩니다!
   constructor(userObj, bgOrImg, text = "", type = "default") {
-    this.user = userObj; 
-    this.name = userObj ? userObj.name : "Unknown"; 
+    this.user = userObj;
+    this.name = userObj ? userObj.name : "Unknown";
     this.text = text;
-    this.isRead = false; 
+    this.isRead = false;
     this.type = type;
 
     // 전달받은 값이 글자(파일 이름)인지 색상인지 똑똑하게 구분
     if (typeof bgOrImg === 'string' && bgOrImg !== "") {
-      this.img = loadImage(bgOrImg); // 글자면 이미지 파일로 불러오기
+      this.img = loadImage(bgOrImg);
+      this.bg = color(20);
+    } else if (bgOrImg && bgOrImg.width !== undefined && bgOrImg.height !== undefined) {
+      this.img = bgOrImg;
       this.bg = color(20);
     } else {
       this.img = null;
-      this.bg = bgOrImg || color(20); // 색상이면 배경색으로 지정
+      this.bg = bgOrImg || color(20);
     }
   }
 
@@ -47,15 +50,15 @@ class Story {
     }
 
     target.noStroke();
-    
+
     // 에러 방지: 유저 정보가 있을 때만 프사 그리기
     if (this.user && typeof this.user.displayProfile === 'function') {
       this.user.displayProfile(x, y, 56, target);
     } else {
-      target.fill(40);  target.circle(x, y, 56);
-      target.fill(60);  target.circle(x, y, 48);
+      target.fill(40); target.circle(x, y, 56);
+      target.fill(60); target.circle(x, y, 48);
     }
-    
+
     target.strokeWeight(1);
   }
 }

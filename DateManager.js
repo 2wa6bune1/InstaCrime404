@@ -20,7 +20,8 @@ class DateManager {
       "shop_master": new User("shop_master", imgProfileShop),
       "???": new User("???", imgProfileX),
       "SYSTEM": new User("SYSTEM", imgProfileSystem),
-      "엄마": new User("엄마", imgProfileNpc)
+      "엄마": new User("엄마", imgProfileNpc),
+      "daily_news": new User("@daily_news", imgProfileNews)
     };
   }
 
@@ -31,14 +32,14 @@ class DateManager {
 
     // ================= [ 1일차 ] =================
     if (this.currentDay === 1) {
-      dailyStories.push(new Story(this.users["주인공"], "부계1.JPG"));
-      dailyStories.push(new Story(this.users["최지안"], "부계1.JPG"));
-      dailyStories.push(new Story(this.users["최지안"], "부계1.JPG"));
-      dailyStories.push(new Story(this.users["최지안"], "부계1.JPG"));
-      dailyStories.push(new Story(this.users["최지안"], "부계1.JPG"));
+      dailyStories.push(new Story(this.users["주인공"], accountX1));
+      dailyStories.push(new Story(this.users["최지안"], jian1_1));
+      dailyStories.push(new Story(this.users["최지안"], jian1_2));
+      dailyStories.push(new Story(this.users["최지안"], jian1_3));
+      dailyStories.push(new Story(this.users["최지안"], jian1_4));
 
-      dailyStories.push(new Story(this.users["정수아"], "정수아1.JPG"));
-      dailyStories.push(new Story(this.users["강하은"], "강하은1.png"));
+      dailyStories.push(new Story(this.users["정수아"], sooah1));
+      dailyStories.push(new Story(this.users["강하은"], haeun1));
 
       dailyStories.push(new Story(this.users["최지안"], color(255), "오늘부터 새로운 단서 탐색 시작."));
       dailyStories.push(new Story(this.users["정수아"], color(255), "이번엔 절대 안 져. 내가 먼저 찾는다."));
@@ -57,13 +58,13 @@ class DateManager {
     } 
     // ================= [ 2일차 ] =================
     else if (this.currentDay === 2) {
-      dailyStories.push(new Story(this.users["주인공"], "부계2.JPG"));
-      dailyStories.push(new Story(this.users["최지안"], color(255), "밤에 혼자 골목길 돌아다니지 마!"));
-      dailyStories.push(new Story(this.users["최지안"], color(255), "밤에 혼자 골목길 돌아다니지 마!"));
-      dailyStories.push(new Story(this.users["최지안"], color(255), "밤에 혼자 골목길 돌아다니지 마!"));
-      dailyStories.push(new Story(this.users["최지안"], color(255), "밤에 혼자 골목길 돌아다니지 마!"));
+      dailyStories.push(new Story(this.users["주인공"], accountX2));
+      dailyStories.push(new Story(this.users["최지안"], jian2_1));
+      dailyStories.push(new Story(this.users["최지안"], jian2_2));
+      dailyStories.push(new Story(this.users["최지안"], jian2_3));
+      dailyStories.push(new Story(this.users["최지안"], jian2_4));
 
-      dailyStories.push(new Story(this.users["강하은"], "강하은2.png"));
+      dailyStories.push(new Story(this.users["강하은"], haeun2));
 
       dailyPosts.push(new Post(this.users["shop_master"], "아이템 상점", "신규 탐색 장비 대량 입고되었습니다. 서두르세요.", 34, color(140, 190, 230)));
       dailyPosts.push(new Post(this.users["최지안"], "상점 앞", "골드가 부족해... 퀘스트 노가다 뛰어야겠다.", 15, color(120, 90, 220)));
@@ -92,15 +93,15 @@ class DateManager {
     }
     // ================= [ 3일차 ] =================
     else if (this.currentDay === 3) {
-      dailyStories.push(new Story(this.users["주인공"], "부계3.JPG"));
-      dailyStories.push(new Story(this.users["최지안"], color(20))); // 빈 문자열 대신 기본 배경색 처리
-      dailyStories.push(new Story(this.users["최지안"], color(20)));
-      dailyStories.push(new Story(this.users["최지안"], color(20)));
+      dailyStories.push(new Story(this.users["주인공"], accountX3));
+      dailyStories.push(new Story(this.users["최지안"], jian3_1)); 
+      dailyStories.push(new Story(this.users["최지안"], jian3_2));
+      dailyStories.push(new Story(this.users["최지안"], jian3_3));
 
-      dailyStories.push(new Story(this.users["정수아"], "정수아3.JPG"));
-      dailyStories.push(new Story(this.users["강하은"], "강하은3.png"));
+      dailyStories.push(new Story(this.users["정수아"], sooah3));
+      dailyStories.push(new Story(this.users["강하은"], haeun3));
       
-      dailyPosts.push(new Post(this.users["정수아"], "알 수 없는 장소", "들어가지 말았어야 했나... 문이 안 열려.", 4, color(60, 60, 80)));
+      dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "부산 20대 대학생 살인사건, 연쇄살인 수사로 전환", 104, color(20), news4));
       dailyPosts.push(new Post(this.users["최지안"], "도서관", "과거 기록에서 무언가 의도적으로 지워진 흔적을 발견했다.", 28, color(200, 180, 150)));
       this.unlockedFeatures.reels = true;
       
@@ -115,14 +116,14 @@ class DateManager {
     }
     // ================= [ 4일차 ] =================
     else if (this.currentDay === 4) {
-      dailyStories.push(new Story(this.users["주인공"], "부계4.JPG"));
-      dailyStories.push(new Story(this.users["최지안"], color(255), "밤에 혼자 골목길 돌아다니지 마!"));
-      dailyStories.push(new Story(this.users["최지안"], color(255), "밤에 혼자 골목길 돌아다니지 마!"));
-      dailyStories.push(new Story(this.users["최지안"], color(255), "밤에 혼자 골목길 돌아다니지 마!"));
-      dailyStories.push(new Story(this.users["최지안"], color(255), "밤에 혼자 골목길 돌아다니지 마!"));
+      dailyStories.push(new Story(this.users["주인공"], accountX4));
+      dailyStories.push(new Story(this.users["최지안"], jian4_1));
+      dailyStories.push(new Story(this.users["최지안"], jian4_2));
+      dailyStories.push(new Story(this.users["최지안"], jian4_3));
+      dailyStories.push(new Story(this.users["최지안"], jian4_4));
 
-      dailyStories.push(new Story(this.users["정수아"], "정수아4.JPG"));
-      dailyStories.push(new Story(this.users["강하은"], "강하은4.png"));
+      dailyStories.push(new Story(this.users["정수아"], sooah4));
+      dailyStories.push(new Story(this.users["강하은"], haeun4));
       
       dailyPosts.push(new Post(this.users["최지안"], "골목길", "어제부터 라이벌이 안 보인다. 장난치는 건가?", 5, color(100, 100, 120)));
       dailyPosts.push(new Post(this.users["???"], "ERROR", "01010100 01110010 01110101", 0, color(150, 0, 0))); 
@@ -136,7 +137,7 @@ class DateManager {
         messages: [{ text: "전화 왜 안 받아!!!", sent: false }]
       });
     }
-    // ================= [ 5일차 ] =================
+    // // ================= [ 5일차 ] =================
     else if (this.currentDay === 5) {
       dailyStories.push(new Story(this.users["주인공"], "부계5.JPG"));
       dailyStories.push(new Story(this.users["강하은"], "강하은5(수정예정).png"));
@@ -152,7 +153,7 @@ class DateManager {
     }
     // ================= [ 0일차 (루프) ] =================
     else if (this.currentDay === 0) {
-      dailyStories.push(new Story(this.users["주인공"], "부계0.JPG"));
+      dailyStories.push(new Story(this.users["주인공"], accountX0));
       dailyStories.push(new Story(this.users["박서아"], color(0), "이번엔 다른 선택을 하길."));
       dailyStories.push(new Story(this.users["박서아"], color(0), "이번엔 다른 선택을 하길."));
       dailyStories.push(new Story(this.users["박서아"], color(0), "이번엔 다른 선택을 하길."));

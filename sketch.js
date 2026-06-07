@@ -9,11 +9,59 @@ let clueHighlight;
 
 let gameState = "START"; 
 
-let imgProfileMain, imgProfileFriend, imgProfileNpc, imgProfileRival;
+let imgProfileMain, imgProfileFriend, imgProfileNpc, imgProfileRival, imgProfileNews;
 let imgProfileAlba, imgProfileCop, imgProfileX, imgProfileShop, imgProfileSystem;
+let haeun1, haeun2, haeun3, haeun4, haeun5;
+let jian1_1, jian1_2, jian1_3, jian1_4, jian2_1, jian2_2, jian2_3, jian2_4;
+let jian3_1, jian3_2, jian3_3, jian4_1, jian4_2, jian4_3, jian4_4;
+let news1, news2, news3, news4, seojun1, seojun2_1, seojun2_2, seojun3, seojun4_1, seojun4_2;
+let sooah1, sooah3, sooah4, accountX0, accountX1, accountX2, accountX3, accountX4, accountX5;
 
 function preload() {
    // imgProfileFriend = loadImage('friendProfile.jpg');
+   imgProfileNews = loadImage('assets/NewsProfile.png');
+   imgProfileX = loadImage('assets/imgProfileX.png');
+   imgProfileRival = loadImage('assets/sooahProfile.png');
+   imgProfileNpc = loadImage('assets/jianProfile.png');
+   haeun1 = loadImage('assets/haeun1.png');
+   haeun2 = loadImage('assets/haeun2.png');
+   haeun3 = loadImage('assets/haeun3.png');
+   haeun4 = loadImage('assets/haeun4.png');
+   haeun5 = loadImage('assets/haeun5.png');
+   jian1_1 = loadImage('assets/jian1-1.png');
+   jian1_2 = loadImage('assets/jian1-2.png');
+   jian1_3 = loadImage('assets/jian1-3.png');
+   jian1_4 = loadImage('assets/jian1-4.png');
+   jian2_1 = loadImage('assets/jian2-1.png');
+   jian2_2 = loadImage('assets/jian2-2.png');
+   jian2_3 = loadImage('assets/jian2-3.png');
+   jian2_4 = loadImage('assets/jian2-4.png');
+   jian3_1 = loadImage('assets/jian3-1.png');
+   jian3_2 = loadImage('assets/jian3-2.png');
+   jian3_3 = loadImage('assets/jian3-3.png');
+   jian4_1 = loadImage('assets/jian4-1.png');
+   jian4_2 = loadImage('assets/jian4-2.png');
+   jian4_3 = loadImage('assets/jian4-3.png');
+   jian4_4 = loadImage('assets/jian4-4.png');
+   news1 = loadImage('assets/news1.png');
+   news2 = loadImage('assets/news2.png');
+   news3 = loadImage('assets/news3.png');
+   news4 = loadImage('assets/news4.png');
+   seojun1 = loadImage('assets/seojun1.png');
+   seojun2_1 = loadImage('assets/seojun2-1.png');
+   seojun2_2 = loadImage('assets/seojun2-2.png');
+   seojun3 = loadImage('assets/seojun3.png');
+   seojun4_1 = loadImage('assets/seojun4-1.png');
+   seojun4_2 = loadImage('assets/seojun4-2.png');
+   sooah1 = loadImage('assets/sooah1.JPG');
+   sooah3 = loadImage('assets/sooah3.JPG');
+   sooah4 = loadImage('assets/sooah4.JPG');
+   accountX0 = loadImage('assets/X0.JPG');
+   accountX1 = loadImage('assets/X1.JPG');
+   accountX2 = loadImage('assets/X2.png');
+   accountX3 = loadImage('assets/X3.png');
+   accountX4 = loadImage('assets/X4.JPG');
+   accountX5 = loadImage('assets/X5.JPG');
 }
 
 function setup() {
