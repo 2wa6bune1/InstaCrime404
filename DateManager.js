@@ -14,6 +14,7 @@ class DateManager {
       "정수아": new User("@sooah.jung", imgProfileRival),
       "이서준": new User("@seo_jun.lee", imgProfileAlba),
       "강하은": new User("@grace_haeun", imgProfileCop),
+      "부계": new User("@last.frame_", imgProfileX),
       
       // 시스템 및 특수 계정들 (포스트/DM에서 쓰임)
       "의문의_X": new User("의문의_X", imgProfileX),
@@ -32,11 +33,11 @@ class DateManager {
 
     // ================= [ 1일차 ] =================
     if (this.currentDay === 1) {
-      dailyStories.push(new Story(this.users["주인공"], accountX1));
       dailyStories.push(new Story(this.users["최지안"], jian1_1));
       dailyStories.push(new Story(this.users["최지안"], jian1_2));
       dailyStories.push(new Story(this.users["최지안"], jian1_3));
       dailyStories.push(new Story(this.users["최지안"], jian1_4));
+      dailyStories.push(new Story(this.users["부계"], accountX1));
 
       dailyStories.push(new Story(this.users["정수아"], sooah1));
       dailyStories.push(new Story(this.users["강하은"], haeun1));
@@ -58,13 +59,13 @@ class DateManager {
     } 
     // ================= [ 2일차 ] =================
     else if (this.currentDay === 2) {
-      dailyStories.push(new Story(this.users["주인공"], accountX2));
       dailyStories.push(new Story(this.users["최지안"], jian2_1));
       dailyStories.push(new Story(this.users["최지안"], jian2_2));
       dailyStories.push(new Story(this.users["최지안"], jian2_3));
       dailyStories.push(new Story(this.users["최지안"], jian2_4));
 
       dailyStories.push(new Story(this.users["강하은"], haeun2));
+      dailyStories.push(new Story(this.users["부계"], accountX2));
 
       dailyPosts.push(new Post(this.users["shop_master"], "아이템 상점", "신규 탐색 장비 대량 입고되었습니다. 서두르세요.", 34, color(140, 190, 230)));
       dailyPosts.push(new Post(this.users["최지안"], "상점 앞", "골드가 부족해... 퀘스트 노가다 뛰어야겠다.", 15, color(120, 90, 220)));
@@ -93,14 +94,14 @@ class DateManager {
     }
     // ================= [ 3일차 ] =================
     else if (this.currentDay === 3) {
-      dailyStories.push(new Story(this.users["주인공"], accountX3));
+      dailyStories.push(new Story(this.users["이서준"], seojun3));
+      dailyStories.push(new Story(this.users["정수아"], sooah3));
+      dailyStories.push(new Story(this.users["부계"], accountX3));
+      dailyStories.push(new Story(this.users["강하은"], haeun3));
+
       dailyStories.push(new Story(this.users["최지안"], jian3_1)); 
       dailyStories.push(new Story(this.users["최지안"], jian3_2));
       dailyStories.push(new Story(this.users["최지안"], jian3_3));
-
-      dailyStories.push(new Story(this.users["정수아"], sooah3));
-      dailyStories.push(new Story(this.users["강하은"], haeun3));
-      dailyStories.push(new Story(this.users["이서준"], seojun3));
       
       dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "부산 20대 대학생 살인사건, 연쇄살인 수사로 전환", 104, color(20), news3));
       dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "영화 블루 아크 개봉 첫 주 예매 1위! \n@야 나랑 이거 볼래?", 254, color(20), news7));
@@ -116,16 +117,17 @@ class DateManager {
     }
     // ================= [ 4일차 ] =================
     else if (this.currentDay === 4) {
-      dailyStories.push(new Story(this.users["주인공"], accountX4));
+      dailyStories.push(new Story(this.users["강하은"], haeun4));
+
       dailyStories.push(new Story(this.users["최지안"], jian4_1));
       dailyStories.push(new Story(this.users["최지안"], jian4_2));
       dailyStories.push(new Story(this.users["최지안"], jian4_3));
       dailyStories.push(new Story(this.users["최지안"], jian4_4, "", "friend"));
 
-      dailyStories.push(new Story(this.users["정수아"], sooah4));
-      dailyStories.push(new Story(this.users["강하은"], haeun4));
+      dailyStories.push(new Story(this.users["부계"], accountX4));
       dailyStories.push(new Story(this.users["이서준"], seojun4_1));
       dailyStories.push(new Story(this.users["이서준"], seojun4_2, "", "friend"));
+      dailyStories.push(new Story(this.users["정수아"], sooah4));
       
       dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "드라마 비밀의 도시 시청률 15% 돌파 ㄷㄷ \n@야 너도 이거 봐??", 75, color(20), news8));
       dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "국가대표 축구팀 극적 역전승, 8강 진출 미쳤다...", 739, color(20), news9));

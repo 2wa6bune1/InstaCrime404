@@ -23,6 +23,8 @@ function preload() {
    imgProfileX = loadImage('assets/imgProfileX.png');
    imgProfileRival = loadImage('assets/sooahProfile.png');
    imgProfileNpc = loadImage('assets/jianProfile.png');
+   imgProfileAlba = loadImage('assets/seojunProfile.png');
+   imgProfileCop = loadImage('assets/haeunProfile.png');
    haeun1 = loadImage('assets/haeun1.png');
    haeun2 = loadImage('assets/haeun2.png');
    haeun3 = loadImage('assets/haeun3.png');
