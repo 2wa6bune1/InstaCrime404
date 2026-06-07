@@ -14,7 +14,7 @@ let imgProfileAlba, imgProfileCop, imgProfileX, imgProfileShop, imgProfileSystem
 let haeun1, haeun2, haeun3, haeun4, haeun5;
 let jian1_1, jian1_2, jian1_3, jian1_4, jian2_1, jian2_2, jian2_3, jian2_4;
 let jian3_1, jian3_2, jian3_3, jian4_1, jian4_2, jian4_3, jian4_4;
-let news1, news2, news3, news4, seojun1, seojun2_1, seojun2_2, seojun3, seojun4_1, seojun4_2;
+let news1, news2, news3, seojun1, seojun2_1, seojun2_2, seojun3, seojun4_1, seojun4_2;
 let sooah1, sooah3, sooah4, accountX0, accountX1, accountX2, accountX3, accountX4, accountX5;
 
 function preload() {
@@ -46,7 +46,6 @@ function preload() {
    news1 = loadImage('assets/news1.png');
    news2 = loadImage('assets/news2.png');
    news3 = loadImage('assets/news3.png');
-   news4 = loadImage('assets/news4.png');
    seojun1 = loadImage('assets/seojun1.png');
    seojun2_1 = loadImage('assets/seojun2-1.png');
    seojun2_2 = loadImage('assets/seojun2-2.png');

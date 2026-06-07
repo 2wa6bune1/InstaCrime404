@@ -101,7 +101,7 @@ class DateManager {
       dailyStories.push(new Story(this.users["정수아"], sooah3));
       dailyStories.push(new Story(this.users["강하은"], haeun3));
       
-      dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "부산 20대 대학생 살인사건, 연쇄살인 수사로 전환", 104, color(20), news4));
+      dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "부산 20대 대학생 살인사건, 연쇄살인 수사로 전환", 104, color(20), news3));
       dailyPosts.push(new Post(this.users["최지안"], "도서관", "과거 기록에서 무언가 의도적으로 지워진 흔적을 발견했다.", 28, color(200, 180, 150)));
       this.unlockedFeatures.reels = true;
       
