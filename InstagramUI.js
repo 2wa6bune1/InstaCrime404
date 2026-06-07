@@ -24,7 +24,7 @@ class InstagramUI {
     this.nextStoryIndex = 0;
     this.stories = [];
     this.posts = [];
-    this.backupStories = null; 
+    this.backupStories = null;
     this.storyGroups = [];
 
     this.storyDuration = 5000;
@@ -45,8 +45,8 @@ class InstagramUI {
 
     this.currentAccount = "main";
     this.lastAccountClickTime = 0;
-    this.minDoubleClickDelay = 1;    
-    this.maxDoubleClickDelay = 500;  
+    this.minDoubleClickDelay = 1;
+    this.maxDoubleClickDelay = 500;
 
     this.dmScrollY = 0;
     this.dmTargetScrollY = 0;
@@ -60,7 +60,7 @@ class InstagramUI {
     this._chatDragMode = null;
     this.chatRooms = [];
   }
-  
+
   loadData(storiesData, postsData) {
     this.stories = storiesData;
     this.posts = postsData;
@@ -88,11 +88,11 @@ class InstagramUI {
     this.chatRooms = chatData;
   }
 
-  addMyStory(img) {
+  addMyStory(img, type = "default") {
     if (typeof dateManager === 'undefined' || !dateManager.users["주인공"]) return;
 
     let myUser = dateManager.users["주인공"];
-    let newStory = new Story(myUser, color(50, 150, 255), color(150, 200, 255), color(20), "새 스토리", img);
+    let newStory = new Story(myUser, img, "", type);
 
     this.stories.unshift(newStory);
 
@@ -213,7 +213,7 @@ class InstagramUI {
     }
     this.chatCursorBlink += deltaTime;
   }
-  
+
   handleAutomaticNext() {
     let prevStory = this.currentStory;
     this.nextStoryIndex = this.currentStory + 1;
@@ -235,11 +235,11 @@ class InstagramUI {
     }
   }
 
-  display(appMouse = {x: -999, y: -999}) {
+  display(appMouse = { x: -999, y: -999 }) {
     fill(20);
     noStroke();
     rect(0, 0, this.w, this.h, 25);
-  
+
     if (this.currentScreen === "feed") {
       this.displayFeed(appMouse);
     } else if (this.currentScreen === "story") {
@@ -248,7 +248,7 @@ class InstagramUI {
       if (typeof storyUploader !== "undefined") {
         storyUploader.display(appMouse);
       }
-    } 
+    }
     else if (this.currentScreen === "dmList") {
       this.displayDMList(appMouse);
     } else if (this.currentScreen === "chatRoom") {
@@ -318,7 +318,7 @@ class InstagramUI {
     stroke(50);
     line(0, 64, this.w, 64);
   }
-  
+
   displayStories(scrolledMouse) {
     fill(30);
     noStroke();
@@ -450,7 +450,7 @@ class InstagramUI {
         vertex(4, 9);
         vertex(-1, 1);
         endShape(CLOSE);
-        
+
         // 안읽음 알림을 이곳에 그림
         let unread = this.getUnreadCount();
         if (unread > 0) {
@@ -603,7 +603,7 @@ class InstagramUI {
     }
 
     if (s.user && typeof s.user.displayProfile === 'function') {
-        s.user.displayProfile(32, 48, 32, g);
+      s.user.displayProfile(32, 48, 32, g);
     }
 
     g.fill(255);
@@ -611,12 +611,39 @@ class InstagramUI {
     g.textStyle(BOLD);
     g.textSize(14);
     g.text(s.name, 55, 53);
+
+    let nameW = g.textWidth(s.name);
+
     g.textStyle(NORMAL);
     g.textSize(13);
-    g.text("2h", 110, 53);
-    g.textAlign(RIGHT, BASELINE);
-    g.textSize(24);
-    g.text("×", this.w - 22, 55);
+    g.fill(170);
+
+    let timeText = "2h";
+    let timeX = 55 + nameW + 10;
+    let timeY = 53;
+
+    g.text(timeText, timeX, timeY);
+
+    // 친한친구 스토리일 때 시간 옆 초록 별 아이콘
+    if (s.type === "friend") {
+      let timeW = g.textWidth(timeText);
+
+      let iconX = timeX + timeW + 10;
+      let iconY = 39;
+      let iconSize = 22;
+
+      // 초록색 둥근 사각형
+      g.noStroke();
+      g.fill(30, 200, 80);
+      g.rect(iconX, iconY, iconSize, iconSize, 6);
+
+      // 흰 별
+      g.fill(255);
+      g.textAlign(CENTER, CENTER);
+      g.textStyle(BOLD);
+      g.textSize(14);
+      g.text("★", iconX + iconSize / 2, iconY + iconSize / 2 + 1);
+    }
 
     g.noFill();
     g.stroke(255);
@@ -702,7 +729,7 @@ class InstagramUI {
 
     return true;
   }
-  
+
   handleClick(mx, my) {
     // 💡 하단 네비게이션 바 기능 활성화 (스토리 화면이 아닐 때만)
     if (this.currentScreen !== "story" && this.currentScreen !== "storyUpload") {
@@ -725,7 +752,7 @@ class InstagramUI {
       let contentY = my + this.scrollY;
       this.checkStoryClick(mx, contentY);
       this.checkLikeClick(mx, contentY);
-      
+
     } else if (this.currentScreen === "story") {
       if (mx > this.w - 50 && my < 80) {
         this.currentScreen = "feed";
@@ -735,7 +762,7 @@ class InstagramUI {
       if (typeof storyUploader !== "undefined") {
         storyUploader.handleClick(mx, my);
       }
-    } 
+    }
     else if (this.currentScreen === "dmList") {
       this.handleDMListClick(mx, my);
     } else if (this.currentScreen === "chatRoom") {
@@ -754,7 +781,7 @@ class InstagramUI {
     }
 
     if (this.currentScreen !== "feed") return;
-    
+
     if (abs(event.deltaX) > 0) {
       this.targetStoryScrollX += event.deltaX * 0.7;
     }
@@ -859,25 +886,25 @@ class InstagramUI {
     for (let r of this.chatRooms) if (r.unread) n++;
     return n;
   }
- 
+
   room() { return this.chatRooms[this.currentChatRoom]; }
- 
+
   openDMList() {
     this.currentScreen = "dmList";
     this.dmScrollY = 0;
     this.dmTargetScrollY = 0;
   }
- 
+
   openChatRoom(index) {
     this.currentChatRoom = index;
     let room = this.chatRooms[index];
-    room.unread = false; 
+    room.unread = false;
     this.currentScreen = "chatRoom";
     this.chatInputText = "";
     this.chatTargetScrollY = this.getChatMaxScroll();
     this.chatScrollY = this.chatTargetScrollY;
   }
- 
+
   sendMessage(txt) {
     if (!txt) return;
     let room = this.room();
@@ -885,15 +912,15 @@ class InstagramUI {
     room.seen = false;
     room.time = "지금";
     this.chatInputText = "";
-    this.chatTargetScrollY = 1e9; 
+    this.chatTargetScrollY = 1e9;
   }
- 
+
   handleChatKeyTyped(k) {
     if (this.currentScreen !== "chatRoom") return false;
     if (k && k.length === 1) { this.chatInputText += k; return true; }
     return false;
   }
- 
+
   handleChatKeyPressed(kc) {
     if (this.currentScreen !== "chatRoom") return false;
     if (kc === BACKSPACE) { this.chatInputText = this.chatInputText.slice(0, -1); return true; }
@@ -904,25 +931,25 @@ class InstagramUI {
     }
     return false;
   }
- 
+
   getDMMaxScroll() {
     let itemH = 72;
     let contentH = 112 + this.chatRooms.length * itemH + 12;
     return max(0, contentH - this.h);
   }
- 
+
   getChatMaxScroll() {
     let headerH = 70, inputH = 60;
     let viewH = this.h - headerH - inputH;
     let total = this.layoutChatMessages().totalH;
     return max(0, total - viewH);
   }
- 
+
   updateChatScroll(appMouse) {
     const scaleFactor = (typeof phone !== "undefined") ? phone.scale : 1;
     const isChat = this.currentScreen === "chatRoom";
     let maxScroll = isChat ? this.getChatMaxScroll() : this.getDMMaxScroll();
- 
+
     if (mouseIsPressed && !this._chatPressed) {
       this._chatPressed = true;
       this._chatDragDist = 0;
@@ -932,14 +959,14 @@ class InstagramUI {
       this._chatPressed = false;
       this._chatDragMode = null;
     }
- 
+
     if (mouseIsPressed && this._chatDragMode) {
       let dy = movedY / scaleFactor;
       this._chatDragDist += abs(movedY);
       if (isChat) this.chatTargetScrollY -= dy;
       else this.dmTargetScrollY -= dy;
     }
- 
+
     if (isChat) {
       this.chatTargetScrollY = constrain(this.chatTargetScrollY, 0, maxScroll);
       this.chatScrollY = lerp(this.chatScrollY, this.chatTargetScrollY, 0.25);
@@ -948,11 +975,11 @@ class InstagramUI {
       this.dmScrollY = lerp(this.dmScrollY, this.dmTargetScrollY, 0.25);
     }
   }
- 
+
   handleDMListClick(mx, my) {
-    if (mx < 52 && my < 60) { this.currentScreen = "feed"; return; } 
-    if (this._chatDragDist > 6) return; 
- 
+    if (mx < 52 && my < 60) { this.currentScreen = "feed"; return; }
+    if (this._chatDragDist > 6) return;
+
     let listTop = 112, itemH = 72;
     let y0 = listTop - this.dmScrollY;
     for (let i = 0; i < this.chatRooms.length; i++) {
@@ -960,10 +987,10 @@ class InstagramUI {
       if (my > Math.max(top, 112) && my < top + itemH) { this.openChatRoom(i); return; }
     }
   }
- 
+
   handleChatRoomClick(mx, my) {
-    if (mx < 52 && my < 60) { this.currentScreen = "dmList"; return; } 
- 
+    if (mx < 52 && my < 60) { this.currentScreen = "dmList"; return; }
+
     let inputH = 60, y = this.h - inputH;
     if (my > y) {
       if (mx > this.w - 72) {
@@ -974,7 +1001,7 @@ class InstagramUI {
       return;
     }
   }
- 
+
   drawChatAvatar(room, x, y, sz, g) {
     if (room.user && room.user.displayProfile) {
       if (g) room.user.displayProfile(x, y, sz, g);
@@ -993,10 +1020,10 @@ class InstagramUI {
     }
     textStyle(NORMAL);
   }
- 
+
   displayDMList(appMouse) {
     const w = this.w, h = this.h;
- 
+
     push();
     drawingContext.save();
     this.createRectClip(0, 112, w, h - 112);
@@ -1008,16 +1035,16 @@ class InstagramUI {
     }
     drawingContext.restore();
     pop();
- 
+
     fill(20); noStroke();
     rect(0, 0, w, 112, 25, 25, 0, 0);
- 
+
     let backHover = appMouse && dist(appMouse.x, appMouse.y, 24, 30) < 22;
     stroke(255); strokeWeight(2.4); noFill(); strokeJoin(ROUND); strokeCap(ROUND);
     push(); translate(22, 30); if (backHover) scale(1.15);
     line(6, -8, -4, 0); line(-4, 0, 6, 8);
     pop();
- 
+
     let myName = this.currentAccount === "main" ? "주인공" : "의문의_X";
     noStroke(); fill(255);
     textAlign(LEFT, CENTER); textStyle(BOLD); textSize(19);
@@ -1026,13 +1053,13 @@ class InstagramUI {
     stroke(255); strokeWeight(2); noFill();
     line(50 + nameW + 9, 27, 50 + nameW + 14, 32);
     line(50 + nameW + 14, 32, 50 + nameW + 19, 27);
- 
+
     stroke(255); strokeWeight(2); noFill(); strokeJoin(ROUND);
     push(); translate(w - 28, 30);
     rect(-9, -9, 18, 18, 4);
     line(-1, 1, 6, -6);
     pop();
- 
+
     noStroke(); fill(38);
     rect(15, 64, w - 30, 34, 12);
     push(); translate(34, 81);
@@ -1042,29 +1069,29 @@ class InstagramUI {
     noStroke(); fill(140);
     textAlign(LEFT, CENTER); textStyle(NORMAL); textSize(13);
     text("검색", 50, 82);
- 
+
     stroke(45); strokeWeight(1); line(0, 112, w, 112);
   }
- 
+
   drawDMRoom(room, y, itemH, appMouse) {
     const w = this.w;
     let cy = y + itemH / 2;
     let hover = appMouse && appMouse.y > Math.max(y, 112) && appMouse.y < y + itemH;
     if (hover) { noStroke(); fill(255, 12); rect(0, y, w, itemH); }
- 
+
     let ax = 42, asz = 52;
     this.drawChatAvatar(room, ax, cy, asz);
     if (room.active) {
       noStroke(); fill(20); circle(ax + 18, cy + 17, 16);
       fill(80, 220, 120); circle(ax + 18, cy + 17, 11);
     }
- 
+
     let tx = ax + 40;
     noStroke(); fill(255);
     textAlign(LEFT, BASELINE); textSize(15);
     textStyle(room.unread ? BOLD : NORMAL);
     text(room.name, tx, cy - 3);
- 
+
     let last = room.messages.length ? room.messages[room.messages.length - 1] : null;
     let preview = last ? (last.sent ? "나: " : "") + last.text : "";
     if (preview.length > 20) preview = preview.slice(0, 20) + "…";
@@ -1075,7 +1102,7 @@ class InstagramUI {
     let pw = textWidth(preview);
     textStyle(NORMAL); fill(120);
     text("  ·  " + room.time, tx + pw, cy + 16);
- 
+
     if (room.unread) {
       noStroke(); fill(40, 130, 255);
       circle(w - 28, cy, 11);
@@ -1089,12 +1116,12 @@ class InstagramUI {
     }
     textStyle(NORMAL);
   }
- 
+
   layoutChatMessages() {
     const w = this.w;
     let maxBubbleW = w * 0.66;
     let padX = 13, padY = 9, lineH = 19, gap = 7, topPad = 14;
- 
+
     textSize(14); textStyle(NORMAL);
     let items = [];
     let y = topPad;
@@ -1115,7 +1142,7 @@ class InstagramUI {
     if (this.room().seen) y += 16;
     return { items, totalH: y + 8 };
   }
- 
+
   wrapText(str, maxW) {
     str = String(str);
     let lines = [], cur = "", lastSpace = -1;
@@ -1134,68 +1161,68 @@ class InstagramUI {
     if (!lines.length) lines.push("");
     return lines;
   }
- 
+
   displayChatRoom(appMouse) {
     const w = this.w, h = this.h;
     let headerH = 70, inputH = 60, padX = 13, padY = 9, lineH = 19;
- 
+
     push();
     drawingContext.save();
     this.createRectClip(0, headerH, w, h - headerH - inputH);
- 
+
     let layout = this.layoutChatMessages();
     let baseY = headerH + 6 - this.chatScrollY;
     let lastSent = null;
- 
+
     textSize(14); textStyle(NORMAL);
     for (let it of layout.items) {
       let y = baseY + it.top;
       if (it.sent) lastSent = { it, y };
       if (y > h || y + it.bh < headerH) continue;
- 
+
       let bx;
       noStroke();
       if (it.sent) { bx = w - 15 - it.bw; fill(70, 120, 245); }
       else { bx = 15; fill(48); }
       rect(bx, y, it.bw, it.bh, 18);
- 
+
       fill(255); textAlign(LEFT, TOP);
       for (let li = 0; li < it.lines.length; li++) {
         text(it.lines[li], bx + padX, y + padY + li * lineH);
       }
     }
- 
+
     if (this.room().seen && lastSent) {
       noStroke(); fill(150);
       textAlign(RIGHT, TOP); textSize(11);
       text("읽음", w - 16, lastSent.y + lastSent.it.bh + 3);
     }
- 
+
     drawingContext.restore();
     pop();
- 
+
     this.drawChatHeader(appMouse, headerH);
     this.drawChatInput(appMouse, inputH);
   }
- 
+
   drawChatHeader(appMouse, headerH) {
     const w = this.w;
     let room = this.room();
     fill(20); noStroke();
     rect(0, 0, w, headerH, 25, 25, 0, 0);
- 
+
     let backHover = appMouse && dist(appMouse.x, appMouse.y, 20, 35) < 22;
     stroke(255); strokeWeight(2.4); noFill(); strokeJoin(ROUND); strokeCap(ROUND);
     push(); translate(20, 35); if (backHover) scale(1.15);
     line(6, -8, -4, 0); line(-4, 0, 6, 8);
     pop();
- 
+
     this.drawChatAvatar(room, 56, 35, 38);
     if (room.active) {
       noStroke(); fill(20); circle(56 + 13, 35 + 13, 12);
       fill(80, 220, 120); circle(56 + 13, 35 + 13, 8);
     }
- 
+
     noStroke(); fill(255);
     textAlign(LEFT, BASELINE); textStyle(BOLD); textSize(15);
     text(room.name, 84, room.active ? 32 : 40);
@@ -1203,7 +1230,7 @@ class InstagramUI {
       fill(150); textStyle(NORMAL); textSize(11);
       text(room.activeText || "활동 중", 84, 48);
     }
- 
+
     stroke(255); strokeWeight(2); noFill(); strokeJoin(ROUND);
     push(); translate(w - 92, 35); rectMode(CENTER);
     rect(0, 0, 13, 19, 3); line(-3, 7, 3, 7);
@@ -1219,18 +1246,18 @@ class InstagramUI {
     noStroke(); fill(255);
     circle(0, -4, 2.4); rect(-1, -1, 2, 8, 1);
     pop();
- 
+
     stroke(45); strokeWeight(1); line(0, headerH, w, headerH);
     textStyle(NORMAL);
   }
- 
+
   drawChatInput(appMouse, inputH) {
     const w = this.w, h = this.h;
     let y = h - inputH;
     fill(20); noStroke();
     rect(0, y, w, inputH, 0, 0, 25, 25);
     stroke(45); strokeWeight(1); line(0, y, w, y);
- 
+
     noStroke(); fill(60, 120, 255);
     circle(28, y + inputH / 2, 34);
     stroke(255); strokeWeight(1.6); noFill(); strokeJoin(ROUND);
@@ -1238,11 +1265,11 @@ class InstagramUI {
     rect(-7, -4, 14, 9, 3); circle(0, 1.5, 6);
     line(-4, -4, -2, -7); line(-2, -7, 2, -7); line(2, -7, 4, -4);
     pop();
- 
+
     let px = 50, pw = w - 50 - 14, ph = 38, py = y + (inputH - ph) / 2;
     noStroke(); fill(36);
     rect(px, py, pw, ph, 19);
- 
+
     textAlign(LEFT, CENTER); textSize(14); textStyle(NORMAL);
     let showCursor = (this.chatCursorBlink % 1000) < 500;
     if (this.chatInputText.length) {

@@ -100,10 +100,10 @@ class DateManager {
 
       dailyStories.push(new Story(this.users["정수아"], sooah3));
       dailyStories.push(new Story(this.users["강하은"], haeun3));
+      dailyStories.push(new Story(this.users["이서준"], seojun3));
       
       dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "부산 20대 대학생 살인사건, 연쇄살인 수사로 전환", 104, color(20), news3));
-      dailyPosts.push(new Post(this.users["최지안"], "도서관", "과거 기록에서 무언가 의도적으로 지워진 흔적을 발견했다.", 28, color(200, 180, 150)));
-      this.unlockedFeatures.reels = true;
+      dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "영화 블루 아크 개봉 첫 주 예매 1위! \n@야 나랑 이거 볼래?", 254, color(20), news7));
       
       dailyChats.push({
         name: "박서아", user: this.users["박서아"], avatarColor: [255, 180, 100], active: true, unread: true, seen: false, time: "방금",
@@ -120,13 +120,15 @@ class DateManager {
       dailyStories.push(new Story(this.users["최지안"], jian4_1));
       dailyStories.push(new Story(this.users["최지안"], jian4_2));
       dailyStories.push(new Story(this.users["최지안"], jian4_3));
-      dailyStories.push(new Story(this.users["최지안"], jian4_4));
+      dailyStories.push(new Story(this.users["최지안"], jian4_4, "", "friend"));
 
       dailyStories.push(new Story(this.users["정수아"], sooah4));
       dailyStories.push(new Story(this.users["강하은"], haeun4));
+      dailyStories.push(new Story(this.users["이서준"], seojun4_1));
+      dailyStories.push(new Story(this.users["이서준"], seojun4_2, "", "friend"));
       
-      dailyPosts.push(new Post(this.users["최지안"], "골목길", "어제부터 라이벌이 안 보인다. 장난치는 건가?", 5, color(100, 100, 120)));
-      dailyPosts.push(new Post(this.users["???"], "ERROR", "01010100 01110010 01110101", 0, color(150, 0, 0))); 
+      dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "드라마 비밀의 도시 시청률 15% 돌파 ㄷㄷ \n@야 너도 이거 봐??", 75, color(20), news8));
+      dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "국가대표 축구팀 극적 역전승, 8강 진출 미쳤다...", 739, color(20), news9));
 
       dailyChats.push({
         name: "강하은", user: this.users["강하은"], avatarColor: [100, 100, 255], active: false, unread: true, seen: false, time: "5분 전",
