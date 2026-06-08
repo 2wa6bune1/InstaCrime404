@@ -8,6 +8,11 @@ let storyUploader;
 let clueHighlight;
 let monologue; // 독백 시스템 변수 추가
 
+let webcam; //5일차
+let day5CameraActive = false;
+let day5CameraStartFrame = 0;
+let day5HandImg;
+
 let gameState = "START"; 
 
 let imgProfileMain, imgProfileFriend, imgProfileNpc, imgProfileRival, imgProfileNews;
@@ -26,6 +31,7 @@ function preload() {
    imgProfileNpc = loadImage('assets/jianProfile.png');
    imgProfileAlba = loadImage('assets/seojunProfile.png');
    imgProfileCop = loadImage('assets/haeunProfile.png');
+   day5HandImg = loadImage('assets/bloodHand.png');
    haeun1 = loadImage('assets/haeun1.png');
    haeun2 = loadImage('assets/haeun2.png');
    haeun3 = loadImage('assets/haeun3.png');
@@ -81,6 +87,13 @@ function setup() {
   phone = new PhoneUI(); 
   monologue = new MonologueSystem(); // 독백 시스템 초기화
   dateManager.loadDailyData(); 
+  webcam = createCapture(VIDEO); //5일차 사용자 얼굴 비춰주는 카메라
+  webcam.size(width, height);
+  webcam.hide();
+  webcam.elt.setAttribute("playsinline", "");
+  webcam.elt.muted = true;
+  webcam.elt.autoplay = true;
+  webcam.elt.play();
 
   clueHighlight = new Highlight("결정적 증거", 200, 150);
   
@@ -151,6 +164,9 @@ if (allStoriesRead && allChatsRead) {
 
     phone.display();
 
+   updateDay5Sequence();
+    drawDay5NoiseOverlay();
+
     if (!phone.expanded) {
       room.displayNextDayButton();
     }
@@ -193,4 +209,91 @@ function mouseWheel(event) {
     phone.handleMouseWheel(event);
   }
   return false;
+}
+
+function updateDay5Sequence() { // 5일차 타이밍 제어
+  if (!dateManager || dateManager.currentDay !== 5) return;
+
+  if (!dateManager.day5StartFrame) {
+    dateManager.day5StartFrame = frameCount;
+    dateManager.day5CameraTriggered = false;
+  }
+
+  let elapsed = frameCount - dateManager.day5StartFrame;
+
+  // 10초 뒤에 카메라 연출 시작
+  if (elapsed >= 600 && !dateManager.day5CameraTriggered) {
+    dateManager.day5CameraTriggered = true;
+    day5CameraActive = true;
+    day5CameraStartFrame = frameCount;
+  }
+}
+
+function drawDay5NoiseOverlay() { // 5일차 노이즈 + 카메라 연출
+  if (!dateManager || dateManager.currentDay !== 5 || !dateManager.day5StartFrame) return;
+  if (!dateManager.day5CameraTriggered) return;
+
+  let elapsed = frameCount - dateManager.day5StartFrame;
+  if (elapsed < 600) return; // 10초 전에는 아무것도 안 그림
+
+  let cameraElapsed = frameCount - day5CameraStartFrame;
+
+  // 6초 뒤 원래 UI로 복귀
+  if (cameraElapsed >= 360) {
+    day5CameraActive = false;
+    dateManager.day5CameraTriggered = false;
+    return;
+  }
+
+  // 카메라 화면 먼저 그리기
+  if (webcam) {
+    push();
+    translate(width, 0);
+    scale(-1, 1);
+
+    // 색을 살리기 위해 tint / filter / gray 효과를 쓰지 않음
+    image(webcam, 0, 0, width, height);
+
+    pop();
+  }
+
+  // 화면 전체 노이즈
+  let intensity = constrain(map(cameraElapsed, 0, 360, 0.25, 1), 0.25, 1);
+
+  noStroke();
+  for (let i = 0; i < 300 * intensity; i++) {
+    if (random() < 0.5) {
+      fill(255, random(10, 90) * intensity);
+    } else {
+      fill(0, random(10, 80) * intensity);
+    }
+    rect(random(width), random(height), random(1, 4), random(1, 4));
+  }
+
+  for (let i = 0; i < 10 * intensity; i++) {
+    fill(random() < 0.5 ? 255 : 0, random(30, 100) * intensity);
+    rect(0, random(height), width, random(2, 10));
+  }
+
+  // 손바닥 PNG를 1/3 정도 크기로 빠르게 다다다닥 찍기
+  if (day5HandImg) {
+    let stampCount = 18; // 한 프레임에 찍는 개수
+    let stampSize = min(width, height) * 0.33; // 대략 1/3 크기
+
+    for (let i = 0; i < stampCount; i++) {
+      let p = random();
+      let x = lerp(-stampSize * 0.2, width + stampSize * 0.2, p);
+      let y = lerp(-stampSize * 0.2, height + stampSize * 0.2, random());
+      let alpha = random(90, 220);
+
+      push();
+      translate(x, y);
+      rotate(random(-0.35, 0.35));
+      imageMode(CENTER);
+      tint(255, alpha);
+      image(day5HandImg, 0, 0, stampSize, stampSize);
+      noTint();
+      pop();
+    }
+  }
 }

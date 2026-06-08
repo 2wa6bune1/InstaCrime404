@@ -9,6 +9,9 @@ class DateManager {
     // 날짜별 독백 출력 여부 추적
     this.startMonologuePlayed = {}; 
     this.endMonologuePlayed = {};
+    // 5일차 연출용
+    this.day5StartFrame = 0;
+    this.day5CameraTriggered = false;
 
     // 💡 날짜별 시작/끝 독백 문장
     this.dayMonologues = {
@@ -234,5 +237,10 @@ class DateManager {
       this.currentDay = 0; 
     }
     this.loadDailyData();
+
+    if (this.currentDay === 5) {   // 10초 뒤부터 UI 작동 멈추기 위함 
+    this.day5StartFrame = frameCount;
+    this.day5CameraTriggered = false;
+  }
   }
 }
