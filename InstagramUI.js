@@ -59,6 +59,9 @@ class InstagramUI {
     this._chatDragDist = 0;
     this._chatDragMode = null;
     this.chatRooms = [];
+    this.chatActiveFromDay = 3;      // 3일차부터 채팅 활성
+    this._forcedChatDay = undefined; // setChatDay(n) 으로 강제 가능
+    this.loadChatData();
   }
 
   loadData(storiesData, postsData) {
@@ -85,7 +88,59 @@ class InstagramUI {
   }
 
   loadChatData(chatData) {
-    this.chatRooms = chatData;
+    // 외부에서 데이터를 주면 그걸 사용 (팀원 코드 호환).
+    // 안 주면 아래 기본 데이터(3일차용 두 채팅방)를 로드합니다.
+    if (chatData && Array.isArray(chatData) && chatData.length > 0) {
+      this.chatRooms = chatData;
+      return;
+    }
+    const u = (name) =>
+      (typeof dateManager !== "undefined" && dateManager.users && dateManager.users[name])
+        ? dateManager.users[name] : null;
+
+    this.chatRooms = [
+      // [1] 이벤트 단톡방 ─ 0일차 사건 직후 흐름
+      {
+        name: "이벤트 단톡방",
+        isGroup: true,
+        memberNames: ["박서아", "강하은", "이서준", "정수아", "최지안"],
+        avatarColor: [90, 170, 200],
+        active: false,
+        unread: true,
+        seen: false,
+        time: "어제",
+        messages: [
+          { sender: "강하은", text: "우리 흩어져서 뭐 하쟈 ~",                          sent: false },
+          { sender: "박서아", text: "나 먼저 갈게. 집에 급하게 일이 생겨서 ㅠㅠ 미안해", sent: false },
+          { sender: "강하은", text: "헐",                                                sent: false },
+          { sender: "이서준", text: "진짜로?",                                           sent: false },
+          { sender: "정수아", text: "갑자기 이렇게 중간에 간다고?",                       sent: false },
+          {                   text: "조심히 가",                                          sent: true  },  // 주인공 (UI에 이름 표시 X)
+          { sender: "최지안", text: "ㅜㅜㅜㅜ 급한일이면 어쩔 수 없지..",                  sent: false },
+          { separator: "다음 날" },
+          { sender: "정수아", text: "너네 장례식 언제 갈거야",                            sent: false },
+        ],
+      },
+
+      // [2] 박서아 ─ 주인공 DM (0일차에 오갔던 대화, 3일차에 다시 봄)
+      {
+        name: "박서아",
+        user: u("박서아"),
+        isGroup: false,
+        avatarColor: [255, 130, 170],
+        active: false,
+        unread: true,
+        seen: true,
+        time: "3일",
+        messages: [
+          { separator: "0일차" },
+          { text: "야 큰일났어",       sent: false },
+          { text: "왜",                sent: true  },
+          { text: "도와줄 수 있어?",   sent: false },
+          { text: "잠깐만 내가 갈게",  sent: true  },
+        ],
+      },
+    ];
   }
 
   addMyStory(img, type = "default") {
@@ -880,8 +935,47 @@ class InstagramUI {
     drawingContext.clip();
   }
 
+  // ============================================================
+  //  채팅(DM) ─ 헬퍼: 일차 게이팅 / 발화자별 색 매핑
+  // ============================================================
+  getCurrentDay() {
+    if (this._forcedChatDay !== undefined) return this._forcedChatDay;
+    if (typeof dateManager !== "undefined" && dateManager) {
+      for (let key of ["currentDay", "day", "dayCount", "currentDayIndex"]) {
+        if (typeof dateManager[key] === "number") return dateManager[key];
+      }
+    }
+    if (typeof currentDay !== "undefined" && typeof currentDay === "number") return currentDay;
+    if (typeof day !== "undefined" && typeof day === "number") return day;
+    return 0;
+  }
+  setChatDay(d) { this._forcedChatDay = d; }   // 테스트/스크립트용
+  _isChatActive() {
+    let threshold = (this.chatActiveFromDay !== undefined) ? this.chatActiveFromDay : 3;
+    return this.getCurrentDay() >= threshold;
+  }
+
+  // 발화자 이름 → { user, color } 매핑 (게임 인물에 맞춰 수정)
+  getSenderInfo(name) {
+    if (!name) return { user: null, color: [120, 120, 120] };
+    let user = (typeof dateManager !== "undefined" && dateManager.users && dateManager.users[name])
+      ? dateManager.users[name] : null;
+    const palette = {
+      "박서아": [255, 130, 170],
+      "강하은": [220, 160,  70],
+      "이서준": [120, 200, 130],
+      "정수아": [150, 130, 220],
+      "최지안": [ 90, 180, 180],
+      "주인공": [ 70, 120, 245],
+    };
+    return { user, color: palette[name] || [130, 130, 140] };
+  }
+
+  // ============================================================
+  //  채팅(DM) ─ 기본 동작
+  // ============================================================
   getUnreadCount() {
-    if (!this.chatRooms) return 0;
+    if (!this.chatRooms || !this._isChatActive()) return 0;
     let n = 0;
     for (let r of this.chatRooms) if (r.unread) n++;
     return n;
@@ -896,9 +990,10 @@ class InstagramUI {
   }
 
   openChatRoom(index) {
+    if (!this._isChatActive()) return;     // 비활성 일차에는 진입 자체를 막음
     this.currentChatRoom = index;
     let room = this.chatRooms[index];
-    room.unread = false;
+    room.unread = false;                   // 읽음 처리 → 파란 점 사라짐
     this.currentScreen = "chatRoom";
     this.chatInputText = "";
     this.chatTargetScrollY = this.getChatMaxScroll();
@@ -920,7 +1015,6 @@ class InstagramUI {
     if (k && k.length === 1) { this.chatInputText += k; return true; }
     return false;
   }
-
   handleChatKeyPressed(kc) {
     if (this.currentScreen !== "chatRoom") return false;
     if (kc === BACKSPACE) { this.chatInputText = this.chatInputText.slice(0, -1); return true; }
@@ -933,6 +1027,7 @@ class InstagramUI {
   }
 
   getDMMaxScroll() {
+    if (!this._isChatActive()) return 0;
     let itemH = 72;
     let contentH = 112 + this.chatRooms.length * itemH + 12;
     return max(0, contentH - this.h);
@@ -955,10 +1050,7 @@ class InstagramUI {
       this._chatDragDist = 0;
       this._chatDragMode = (appMouse && appMouse.y > 112) ? (isChat ? "chat" : "dm") : null;
     }
-    if (!mouseIsPressed) {
-      this._chatPressed = false;
-      this._chatDragMode = null;
-    }
+    if (!mouseIsPressed) { this._chatPressed = false; this._chatDragMode = null; }
 
     if (mouseIsPressed && this._chatDragMode) {
       let dy = movedY / scaleFactor;
@@ -977,7 +1069,8 @@ class InstagramUI {
   }
 
   handleDMListClick(mx, my) {
-    if (mx < 52 && my < 60) { this.currentScreen = "feed"; return; }
+    if (mx < 52 && my < 60) { this.currentScreen = "feed"; return; }    // 뒤로가기
+    if (!this._isChatActive()) return;        // 비활성 일차엔 항목 클릭 무시
     if (this._chatDragDist > 6) return;
 
     let listTop = 112, itemH = 72;
@@ -990,7 +1083,6 @@ class InstagramUI {
 
   handleChatRoomClick(mx, my) {
     if (mx < 52 && my < 60) { this.currentScreen = "dmList"; return; }
-
     let inputH = 60, y = this.h - inputH;
     if (my > y) {
       if (mx > this.w - 72) {
@@ -1002,7 +1094,11 @@ class InstagramUI {
     }
   }
 
+  // ============================================================
+  //  채팅(DM) ─ 아바타 그리기
+  // ============================================================
   drawChatAvatar(room, x, y, sz, g) {
+    if (room.isGroup) { this.drawGroupAvatar(room, x, y, sz, g); return; }
     if (room.user && room.user.displayProfile) {
       if (g) room.user.displayProfile(x, y, sz, g);
       else room.user.displayProfile(x, y, sz);
@@ -1021,21 +1117,65 @@ class InstagramUI {
     textStyle(NORMAL);
   }
 
+  // 단톡방 ─ 두 멤버 아바타가 겹쳐 보이는 형태
+  drawGroupAvatar(room, x, y, sz, g) {
+    let members = room.memberNames || [];
+    let m1 = members[0], m2 = members[1];
+    let s = sz * 0.7;
+    let off = sz * 0.18;
+    const drawOne = (name, cx, cy) => {
+      let info = this.getSenderInfo(name);
+      if (g) { g.noStroke(); g.fill(20); g.circle(cx, cy, s + 4); }
+      else { noStroke(); fill(20); circle(cx, cy, s + 4); }
+      if (info.user && info.user.displayProfile) {
+        if (g) info.user.displayProfile(cx, cy, s, g);
+        else info.user.displayProfile(cx, cy, s);
+      } else {
+        let c = info.color;
+        if (g) {
+          g.noStroke(); g.fill(c[0], c[1], c[2]); g.circle(cx, cy, s);
+          if (name) { g.fill(255); g.textAlign(CENTER, CENTER); g.textStyle(BOLD); g.textSize(s * 0.42); g.text(name.charAt(0), cx, cy + 1); }
+        } else {
+          noStroke(); fill(c[0], c[1], c[2]); circle(cx, cy, s);
+          if (name) { fill(255); textAlign(CENTER, CENTER); textStyle(BOLD); textSize(s * 0.42); text(name.charAt(0), cx, cy + 1); }
+        }
+      }
+    };
+    drawOne(m1, x + off, y + off);   // 뒤
+    drawOne(m2, x - off, y - off);   // 앞
+    if (g) g.textStyle(NORMAL); else textStyle(NORMAL);
+  }
+
+  // ============================================================
+  //  채팅(DM) ─ DM 목록 화면
+  // ============================================================
   displayDMList(appMouse) {
     const w = this.w, h = this.h;
+    let active = this._isChatActive();
 
     push();
     drawingContext.save();
     this.createRectClip(0, 112, w, h - 112);
-    let topY = 112 - this.dmScrollY;
-    for (let i = 0; i < this.chatRooms.length; i++) {
-      let y = topY + i * 72;
-      if (y > h || y + 72 < 100) continue;
-      this.drawDMRoom(this.chatRooms[i], y, 72, appMouse);
+
+    if (!active) {
+      // 3일차 이전 ─ 빈 상태
+      noStroke(); fill(160);
+      textAlign(CENTER, CENTER); textStyle(BOLD); textSize(16);
+      text("아직 대화가 없어요", w / 2, h / 2 - 14);
+      fill(110); textStyle(NORMAL); textSize(12.5);
+      text("새 메시지가 오면 여기에 표시됩니다", w / 2, h / 2 + 10);
+    } else {
+      let topY = 112 - this.dmScrollY;
+      for (let i = 0; i < this.chatRooms.length; i++) {
+        let y = topY + i * 72;
+        if (y > h || y + 72 < 100) continue;
+        this.drawDMRoom(this.chatRooms[i], y, 72, appMouse);
+      }
     }
     drawingContext.restore();
     pop();
 
+    // 상단 헤더 (뒤로가기 / 계정명 / 새메시지 / 검색)
     fill(20); noStroke();
     rect(0, 0, w, 112, 25, 25, 0, 0);
 
@@ -1079,9 +1219,9 @@ class InstagramUI {
     let hover = appMouse && appMouse.y > Math.max(y, 112) && appMouse.y < y + itemH;
     if (hover) { noStroke(); fill(255, 12); rect(0, y, w, itemH); }
 
-    let ax = 42, asz = 52;
-    this.drawChatAvatar(room, ax, cy, asz);
-    if (room.active) {
+    let ax = 42;
+    this.drawChatAvatar(room, ax, cy, 52);
+    if (room.active && !room.isGroup) {
       noStroke(); fill(20); circle(ax + 18, cy + 17, 16);
       fill(80, 220, 120); circle(ax + 18, cy + 17, 11);
     }
@@ -1092,9 +1232,20 @@ class InstagramUI {
     textStyle(room.unread ? BOLD : NORMAL);
     text(room.name, tx, cy - 3);
 
-    let last = room.messages.length ? room.messages[room.messages.length - 1] : null;
-    let preview = last ? (last.sent ? "나: " : "") + last.text : "";
-    if (preview.length > 20) preview = preview.slice(0, 20) + "…";
+    // 마지막 진짜 메시지 (separator 건너뜀)
+    let last = null;
+    for (let i = room.messages.length - 1; i >= 0; i--) {
+      if (room.messages[i].separator) continue;
+      last = room.messages[i]; break;
+    }
+    let preview = "";
+    if (last) {
+      if (last.sent) preview = "나: " + last.text;
+      else if (room.isGroup && last.sender) preview = last.sender + ": " + last.text;
+      else preview = last.text;
+    }
+    if (preview.length > 22) preview = preview.slice(0, 22) + "…";
+
     textSize(13);
     textStyle(room.unread ? BOLD : NORMAL);
     fill(room.unread ? 240 : 150);
@@ -1117,30 +1268,65 @@ class InstagramUI {
     textStyle(NORMAL);
   }
 
+  // ============================================================
+  //  채팅(DM) ─ 대화방 화면 (separator + 단톡 발화자 라벨/아바타)
+  // ============================================================
   layoutChatMessages() {
     const w = this.w;
-    let maxBubbleW = w * 0.66;
-    let padX = 13, padY = 9, lineH = 19, gap = 7, topPad = 14;
+    let isGroup = this.room().isGroup;
+    let avatarSlot = isGroup ? 36 : 0;
+    let maxBubbleW = (w - avatarSlot) * 0.7;
+    let padX = 13, padY = 9, lineH = 19, gap = 6, topPad = 14;
+    let nameH = 16, sepH = 30;
 
     textSize(14); textStyle(NORMAL);
     let items = [];
     let y = topPad;
-    let prevSent = null;
+    let prevKey = null;
     let msgs = this.room().messages;
+
     for (let i = 0; i < msgs.length; i++) {
       let m = msgs[i];
+      if (m.separator) {
+        items.push({ type: "separator", text: m.separator, top: y, height: sepH });
+        y += sepH; prevKey = null; continue;
+      }
+
+      let key = m.sent ? "__me" : (m.sender || "_other");
+      let sameAsPrev = (key === prevKey);
+      let showName = isGroup && !m.sent && !sameAsPrev;
+
+      if (sameAsPrev) y -= 2;
+      else if (prevKey !== null) y += 2;
+      if (showName) y += nameH;
+
       let lines = this.wrapText(m.text, maxBubbleW - padX * 2);
       let maxLineW = 0;
       for (let ln of lines) maxLineW = max(maxLineW, textWidth(ln));
       let bw = min(maxBubbleW, maxLineW + padX * 2);
       let bh = lines.length * lineH + padY * 2;
-      if (prevSent !== null && prevSent !== m.sent) y += 4;
-      items.push({ lines, bw, bh, sent: m.sent, top: y });
+
+      let nextKey = null;
+      if (i + 1 < msgs.length) {
+        let nm = msgs[i + 1];
+        if (!nm.separator) nextKey = nm.sent ? "__me" : (nm.sender || "_other");
+      }
+      let isLastInRun = (nextKey !== key);
+
+      items.push({
+        type: "bubble",
+        sender: m.sender, sent: m.sent,
+        lines, bw, bh, top: y,
+        showName,
+        showAvatar: isGroup && !m.sent && isLastInRun,
+      });
+
       y += bh + gap;
-      prevSent = m.sent;
+      prevKey = key;
     }
+
     if (this.room().seen) y += 16;
-    return { items, totalH: y + 8 };
+    return { items, totalH: y + 8, avatarSlot, isGroup };
   }
 
   wrapText(str, maxW) {
@@ -1173,28 +1359,71 @@ class InstagramUI {
     let layout = this.layoutChatMessages();
     let baseY = headerH + 6 - this.chatScrollY;
     let lastSent = null;
+    let avatarSlot = layout.avatarSlot;
 
     textSize(14); textStyle(NORMAL);
     for (let it of layout.items) {
       let y = baseY + it.top;
+
+      // separator (예: "다음 날", "0일차")
+      if (it.type === "separator") {
+        if (y > h || y + it.height < headerH) continue;
+        stroke(60); strokeWeight(1);
+        line(20, y + it.height / 2, w / 2 - 36, y + it.height / 2);
+        line(w / 2 + 36, y + it.height / 2, w - 20, y + it.height / 2);
+        noStroke(); fill(150);
+        textAlign(CENTER, CENTER); textStyle(NORMAL); textSize(11);
+        text(it.text, w / 2, y + it.height / 2);
+        continue;
+      }
+
       if (it.sent) lastSent = { it, y };
       if (y > h || y + it.bh < headerH) continue;
+
+      // 발화자 이름 라벨 (단톡 + 받은 메시지 + 시퀀스 첫 번째)
+      if (it.showName) {
+        let info = this.getSenderInfo(it.sender);
+        noStroke(); fill(info.color[0], info.color[1], info.color[2]);
+        textAlign(LEFT, BASELINE); textStyle(NORMAL); textSize(11);
+        text(it.sender || "", 15 + avatarSlot + 6, y - 4);
+      }
 
       let bx;
       noStroke();
       if (it.sent) { bx = w - 15 - it.bw; fill(70, 120, 245); }
-      else { bx = 15; fill(48); }
+      else        { bx = 15 + avatarSlot; fill(48); }
       rect(bx, y, it.bw, it.bh, 18);
 
-      fill(255); textAlign(LEFT, TOP);
+      fill(255); textAlign(LEFT, TOP); textStyle(NORMAL); textSize(14);
       for (let li = 0; li < it.lines.length; li++) {
         text(it.lines[li], bx + padX, y + padY + li * lineH);
       }
+
+      // 좌측 작은 아바타 (단톡 + 받은 메시지 + 시퀀스 마지막)
+      if (it.showAvatar) {
+        let info = this.getSenderInfo(it.sender);
+        let cax = 15 + 13, cay = y + it.bh - 13;
+        if (info.user && info.user.displayProfile) {
+          info.user.displayProfile(cax, cay, 26);
+        } else {
+          noStroke(); fill(info.color[0], info.color[1], info.color[2]);
+          circle(cax, cay, 26);
+          fill(255); textAlign(CENTER, CENTER); textStyle(BOLD); textSize(11);
+          text((it.sender || "?").charAt(0), cax, cay + 1);
+          textStyle(NORMAL);
+        }
+      }
     }
 
-    if (this.room().seen && lastSent) {
+    // "읽음" ─ 대화의 마지막 메시지가 내가 보낸 것이고 seen=true 일 때만
+    let allMsgs = this.room().messages;
+    let lastRealMsg = null;
+    for (let i = allMsgs.length - 1; i >= 0; i--) {
+      if (!allMsgs[i].separator) { lastRealMsg = allMsgs[i]; break; }
+    }
+    if (this.room().seen && lastSent && lastRealMsg && lastRealMsg.sent) {
       noStroke(); fill(150);
-      textAlign(RIGHT, TOP); textSize(11);
+      textAlign(RIGHT, TOP); textStyle(NORMAL); textSize(11);
       text("읽음", w - 16, lastSent.y + lastSent.it.bh + 3);
     }
 
@@ -1218,17 +1447,21 @@ class InstagramUI {
     pop();
 
     this.drawChatAvatar(room, 56, 35, 38);
-    if (room.active) {
+    if (room.active && !room.isGroup) {
       noStroke(); fill(20); circle(56 + 13, 35 + 13, 12);
       fill(80, 220, 120); circle(56 + 13, 35 + 13, 8);
     }
 
     noStroke(); fill(255);
     textAlign(LEFT, BASELINE); textStyle(BOLD); textSize(15);
-    text(room.name, 84, room.active ? 32 : 40);
-    if (room.active) {
+    let hasSub = (room.active && !room.isGroup) || (room.isGroup && room.memberNames);
+    text(room.name, 84, hasSub ? 32 : 40);
+    if (room.active && !room.isGroup) {
       fill(150); textStyle(NORMAL); textSize(11);
       text(room.activeText || "활동 중", 84, 48);
+    } else if (room.isGroup && room.memberNames) {
+      fill(150); textStyle(NORMAL); textSize(11);
+      text(room.memberNames.length + "명", 84, 48);
     }
 
     stroke(255); strokeWeight(2); noFill(); strokeJoin(ROUND);
