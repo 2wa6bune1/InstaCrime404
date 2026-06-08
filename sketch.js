@@ -12,6 +12,8 @@ let webcam; //5일차
 let day5CameraActive = false;
 let day5CameraStartFrame = 0;
 let day5HandImg;
+let endingVideo;
+let endingVideoPlaying = false; 
 
 let gameState = "START"; 
 
@@ -94,6 +96,8 @@ function setup() {
   webcam.elt.muted = true;
   webcam.elt.autoplay = true;
   webcam.elt.play();
+  endingVideo = createVideo("assets/endingVedioTest.mp4");
+  endingVideo.hide();
 
   clueHighlight = new Highlight("결정적 증거", 200, 150);
   
@@ -106,6 +110,26 @@ function setup() {
 }
 
 function draw() {
+  if (endingVideoPlaying) { //전말 비디오
+  image(endingVideo, 0, 0, width, height);
+
+  if (endingVideo.elt.ended) {
+    endingVideoPlaying = false;
+    if (phone && phone.instagram) {
+      phone.instagram.currentScreen = "feed";
+    }
+    if (dateManager) {
+      dateManager.day5EndingReady = false;
+    }
+  }
+  return;
+}
+
+if (!phone.expanded) {
+  room.displayNextDayButton();
+  room.displayEndingButton();
+}
+
   if (gameState === "START") {
     background(20);
     fill(255);
@@ -239,9 +263,10 @@ function drawDay5NoiseOverlay() { // 5일차 노이즈 + 카메라 연출
   let cameraElapsed = frameCount - day5CameraStartFrame;
 
   // 6초 뒤 원래 UI로 복귀
-  if (cameraElapsed >= 360) {
+  if (cameraElapsed >= 300) {
     day5CameraActive = false;
     dateManager.day5CameraTriggered = false;
+    dateManager.day5EndingReady = true; // 사건의 전말 버튼 띄울 준비 완료
     return;
   }
 
@@ -294,6 +319,14 @@ function drawDay5NoiseOverlay() { // 5일차 노이즈 + 카메라 연출
       image(day5HandImg, 0, 0, stampSize, stampSize);
       noTint();
       pop();
+    }
+  }
+  function startEndingVideo() {
+    endingVideoPlaying = true;
+    endingVideo.time(0);
+    endingVideo.play();
+    if (phone && phone.instagram) {
+      phone.instagram.currentScreen = "endingVideo";
     }
   }
 }
