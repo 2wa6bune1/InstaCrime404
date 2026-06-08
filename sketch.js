@@ -6,6 +6,7 @@ let dateManager;
 let room;
 let storyUploader;
 let clueHighlight;
+let monologue; // 독백 시스템 변수 추가
 
 let gameState = "START"; 
 
@@ -78,16 +79,16 @@ function setup() {
   room = new Room();
   dateManager = new DateManager();
   phone = new PhoneUI(); 
+  monologue = new MonologueSystem(); // 독백 시스템 초기화
   dateManager.loadDailyData(); 
 
-  // --- 하이라이트 추가하는 곳 (수정됨) ---
   clueHighlight = new Highlight("결정적 증거", 200, 150);
   
-  // 에러 방지: 빈 글씨("")가 아니라 임시 Story 객체를 넣어야 합니다.
   let dummyUser = dateManager.users["단짝_친구"];
-  clueHighlight.addHightlight(new Story(dummyUser, color(0), color(0), color(0), "하이라이트 테스트"));
-  // ----------------------------------------
-
+  if (dummyUser) {
+    clueHighlight.addHightlight(new Story(dummyUser, color(0), color(0), color(0), "하이라이트 테스트"));
+  }
+  
   storyUploader = new StoryUploader(phone.instagram); 
 }
 
@@ -108,23 +109,40 @@ function draw() {
     textSize(24);
     textStyle(NORMAL);
     text("게임 시작하기", width/2, height/2 + 10);
-  } else {
-    let currentStories = phone.instagram.stories;
-    if (currentStories.length === 0 || currentStories.every(s => s.isRead === true)) {
-      room.goNextDay = true;
-    } else {
-      room.goNextDay = false;
+ } else {
+    // 💡 아래와 같이 phone과 instagram 객체가 존재하는지 확인하는 조건을 추가합니다.
+    let currentStories = (phone && phone.instagram) ? phone.instagram.stories : [];
+    let currentChats = (phone && phone.instagram && phone.instagram.dm) ? phone.instagram.dm.chatRooms : [];
+    
+    let allStoriesRead = currentStories.length === 0 || currentStories.every(s => s.isRead);
+    let allChatsRead = currentChats.length === 0 || currentChats.every(c => !c.unread);
+
+if (allStoriesRead && allChatsRead) {
+  if (!dateManager.endMonologuePlayed[dateManager.currentDay] && phone.instagram.currentScreen === "feed") {
+    let endText = dateManager.getEndMonologue(dateManager.currentDay);
+
+    if (endText) {
+      monologue.start(endText);
     }
+
+    dateManager.endMonologuePlayed[dateManager.currentDay] = true;
+  } 
+  else if (dateManager.endMonologuePlayed[dateManager.currentDay] && !monologue.active) {
+    room.goNextDay = true;
+  } else {
+    room.goNextDay = false;
+  }
+} else {
+  room.goNextDay = false;
+}
 
     room.display();
     phone.update();
 
-    // --- 괄호 꼬임 및 함수 호출 오류 수정 ---
     if (phone.instagram.currentScreen === "profile") {
-      clueHighlight.displayIcon(false); // 괄호() 추가!
-    } // if문 닫기 추가!
+      clueHighlight.displayIcon(false); 
+    } 
     
-    // 스토리 대신 하이라이트 틀었던거 --> 정보 복구하는 곳
     if (phone.instagram.backupStories && phone.instagram.currentScreen !== "story") {  
       phone.instagram.stories = phone.instagram.backupStories; 
       phone.instagram.backupStories = null; 
@@ -136,6 +154,10 @@ function draw() {
     if (!phone.expanded) {
       room.displayNextDayButton();
     }
+
+    // 독백 업데이트 및 출력 (항상 최상단에 렌더링)
+    monologue.update();
+    monologue.display();
   }
 }
 
@@ -147,6 +169,13 @@ function mousePressed() {
     return;
   }
 
+  // 💡 독백이 떠있을 때 클릭하면 독백만 처리하고 함수 종료
+  if (monologue.active) {
+    monologue.checkClick();
+    return; 
+  }
+
+  // 독백이 없을 때만 폰 클릭 이벤트 실행
   let phoneClicked = phone.handleMousePressed(); 
   if (!phoneClicked) {
     if (phone.expanded) {
@@ -164,4 +193,4 @@ function mouseWheel(event) {
     phone.handleMouseWheel(event);
   }
   return false;
-} 
+}

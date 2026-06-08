@@ -177,6 +177,17 @@ class PhoneUI {
     this.targetFlipProgress = 1; 
     this.targetX = this.bigX;
     this.targetY = this.bigY;
+
+    // 💡 매 일차 처음으로 핸드폰을 열었을 때 독백 출력
+ if (!dateManager.startMonologuePlayed[dateManager.currentDay]) {
+  let startText = dateManager.getStartMonologue(dateManager.currentDay);
+
+  if (startText) {
+    monologue.start(startText);
+  }
+
+  dateManager.startMonologuePlayed[dateManager.currentDay] = true;
+    }
   }
 
   getPhoneLocalMouse() {

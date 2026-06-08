@@ -2,13 +2,17 @@
 // story.js
 // ======================================================
 class Story {
-  // bgOrImg 자리에 색깔(color)을 넣으면 배경색이 되고, "사진.jpg"를 넣으면 자동으로 사진이 됩니다!
-  constructor(userObj, bgOrImg, text = "", type = "default") {
+  // 💡 인자에 monoText 추가, 기본값은 빈 문자열("")
+  constructor(userObj, bgOrImg, text = "", type = "default", monoText = "") {
     this.user = userObj;
     this.name = userObj ? userObj.name : "Unknown";
     this.text = text;
     this.isRead = false;
     this.type = type;
+
+    // 💡 독백 관련 변수
+    this.monoText = monoText;
+    this.monoPlayed = false;
 
     // 전달받은 값이 글자(파일 이름)인지 색상인지 똑똑하게 구분
     if (typeof bgOrImg === 'string' && bgOrImg !== "") {
