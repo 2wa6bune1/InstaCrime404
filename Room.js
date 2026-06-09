@@ -27,12 +27,19 @@ class Room {
     text(dayText, 30, 30);
   }
 
- displayNextDayButton() {
-  if (dateManager && dateManager.day5EndingReady) return; // 5일차 이후 숨김
+displayNextDayButton() {
+  if (
+    dateManager &&
+    (
+      dateManager.currentDay === 5 ||
+      dateManager.day5EndingReady
+    )
+  ) return;
 
   if (this.goNextDay) {
     fill(255, 100, 100);
     rect(50, height - 100, 160, 50, 10);
+
     fill(255);
     textAlign(LEFT, BASELINE);
     textSize(16);
@@ -43,23 +50,24 @@ class Room {
 displayEndingButton() {
   if (!dateManager || !dateManager.day5EndingReady) return;
 
-  fill(80, 80, 80);
-  rect(50, height - 100, 160, 50, 10);
+  fill(120, 20, 20);
+  rect(50, height - 100, 220, 50, 10);
+
   fill(255);
   textAlign(LEFT, BASELINE);
   textSize(16);
-  text("사건의 전말 보기", 70, height - 70);
+  text("사건의 전말 확인하기", 70, height - 70);
 }
 
 checkClick(mx, my) {
   // 5일차 연출 후 새 버튼
   if (dateManager && dateManager.day5EndingReady) {
-    if (mx > 50 && mx < 210 && my > height - 100 && my < height - 50) {
-      if (typeof startEndingVideo === "function") {
-        startEndingVideo();
-      }
+  if (mx > 50 && mx < 270 && my > height - 100 && my < height - 50) {
+    if (typeof startEndingVideo === "function") {
+      startEndingVideo();
     }
-    return;
+  }
+  return;
   }
 
   // 평소 버튼

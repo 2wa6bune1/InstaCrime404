@@ -16,6 +16,8 @@ class DateManager {
     this.day5CameraTriggered = false;
     this.day5EndingReady = false;
 
+    this.day5SequenceFinished = false;
+
     // 💡 날짜별 시작/끝 독백 문장
     this.dayMonologues = {
       1: {
@@ -241,10 +243,11 @@ class DateManager {
     }
     this.loadDailyData();
 
-    if (this.currentDay === 5) {   // 10초 뒤부터 UI 작동 멈추기 위함 
-    this.day5StartFrame = frameCount;
-    this.day5CameraTriggered = false;
-    this.day5EndingReady = false;
-  }
+    if (this.currentDay === 5) {
+      this.day5StartFrame = 0;
+      this.day5CameraTriggered = false;
+      this.day5EndingReady = false;
+      this.day5SequenceFinished = false;
+    }
   }
 }

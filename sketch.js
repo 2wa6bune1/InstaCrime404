@@ -109,26 +109,27 @@ function setup() {
   storyUploader = new StoryUploader(phone.instagram); 
 }
 
+
 function draw() {
-  if (endingVideoPlaying) { //전말 비디오
-  image(endingVideo, 0, 0, width, height);
+  if (endingVideoPlaying) {
+    image(endingVideo, 0, 0, width, height);
 
-  if (endingVideo.elt.ended) {
-    endingVideoPlaying = false;
-    if (phone && phone.instagram) {
-      phone.instagram.currentScreen = "feed";
+    if (endingVideo.elt.ended) {
+      endingVideoPlaying = false;
+
+      if (phone && phone.instagram) {
+        phone.instagram.currentScreen = "feed";
+      }
+
+      if (dateManager) {
+        dateManager.day5EndingReady = false;
+        dateManager.day5SequenceFinished = true;
+        dateManager.day5CameraTriggered = false;
+        dateManager.day5StartFrame = 0;
+      }
     }
-    if (dateManager) {
-      dateManager.day5EndingReady = false;
-    }
+    return;
   }
-  return;
-}
-
-if (!phone.expanded) {
-  room.displayNextDayButton();
-  room.displayEndingButton();
-}
 
   if (gameState === "START") {
     background(20);
@@ -136,70 +137,77 @@ if (!phone.expanded) {
     textAlign(CENTER, CENTER);
     textSize(40);
     textStyle(BOLD);
-    text("MYSTERY GAME", width/2, height/3 - 30);
+    text("MYSTERY GAME", width / 2, height / 3 - 30);
 
     fill(200, 40, 60);
     noStroke();
-    rect(width/2 - 100, height/2 - 20, 200, 60, 15);
-    
+    rect(width / 2 - 100, height / 2 - 20, 200, 60, 15);
+
     fill(255);
     textSize(24);
     textStyle(NORMAL);
-    text("게임 시작하기", width/2, height/2 + 10);
- } else {
-    // 💡 아래와 같이 phone과 instagram 객체가 존재하는지 확인하는 조건을 추가합니다.
+    text("게임 시작하기", width / 2, height / 2 + 10);
+  } else {
     let currentStories = (phone && phone.instagram) ? phone.instagram.stories : [];
     let currentChats = (phone && phone.instagram && phone.instagram.dm) ? phone.instagram.dm.chatRooms : [];
-    
+
     let allStoriesRead = currentStories.length === 0 || currentStories.every(s => s.isRead);
     let allChatsRead = currentChats.length === 0 || currentChats.every(c => !c.unread);
 
-if (allStoriesRead && allChatsRead) {
-  if (!dateManager.endMonologuePlayed[dateManager.currentDay] && phone.instagram.currentScreen === "feed") {
-    let endText = dateManager.getEndMonologue(dateManager.currentDay);
+    if (allStoriesRead && allChatsRead) {
+      if (!dateManager.endMonologuePlayed[dateManager.currentDay] && phone.instagram.currentScreen === "feed") {
+        let endText = dateManager.getEndMonologue(dateManager.currentDay);
 
-    if (endText) {
-      monologue.start(endText);
+        if (endText) {
+          monologue.start(endText);
+        }
+
+        dateManager.endMonologuePlayed[dateManager.currentDay] = true;
+      } else if (dateManager.endMonologuePlayed[dateManager.currentDay] && !monologue.active) {
+        room.goNextDay = true;
+      } else {
+        room.goNextDay = false;
+      }
+    } else {
+      room.goNextDay = false;
     }
-
-    dateManager.endMonologuePlayed[dateManager.currentDay] = true;
-  } 
-  else if (dateManager.endMonologuePlayed[dateManager.currentDay] && !monologue.active) {
-    room.goNextDay = true;
-  } else {
-    room.goNextDay = false;
-  }
-} else {
-  room.goNextDay = false;
-}
 
     room.display();
     phone.update();
 
     if (phone.instagram.currentScreen === "profile") {
-      clueHighlight.displayIcon(false); 
-    } 
-    
-    if (phone.instagram.backupStories && phone.instagram.currentScreen !== "story") {  
-      phone.instagram.stories = phone.instagram.backupStories; 
-      phone.instagram.backupStories = null; 
-      phone.instagram.currentScreen = "feed"; 
+      clueHighlight.displayIcon(false);
+    }
+
+    if (phone.instagram.backupStories && phone.instagram.currentScreen !== "story") {
+      phone.instagram.stories = phone.instagram.backupStories;
+      phone.instagram.backupStories = null;
+      phone.instagram.currentScreen = "feed";
     }
 
     phone.display();
 
-   updateDay5Sequence();
+    updateDay5Sequence();
     drawDay5NoiseOverlay();
 
     if (!phone.expanded) {
-      room.displayNextDayButton();
-    }
-
-    // 독백 업데이트 및 출력 (항상 최상단에 렌더링)
+      if (
+        dateManager &&
+        dateManager.currentDay === 5 &&
+        dateManager.day5EndingReady &&
+        !endingVideoPlaying
+      ) {
+        room.displayEndingButton();
+      } else if (!(dateManager && dateManager.currentDay === 5)) {
+        room.displayNextDayButton();
+      }
+    
     monologue.update();
     monologue.display();
   }
 }
+
+
 
 function mousePressed() {
   if (gameState === "START") {
@@ -235,13 +243,22 @@ function mouseWheel(event) {
   return false;
 }
 
-function updateDay5Sequence() { // 5일차 타이밍 제어
-  if (!dateManager || dateManager.currentDay !== 5) return;
+function updateDay5Sequence() {
+  if (!dateManager || dateManager.currentDay !== 5 || dateManager.day5SequenceFinished) return;
 
   if (!dateManager.day5StartFrame) {
     dateManager.day5StartFrame = frameCount;
-    dateManager.day5CameraTriggered = false;
+    dateManager.day5CameraTriggered = true;
+    dateManager.day5EndingReady = false;
   }
+
+  let elapsed = frameCount - dateManager.day5StartFrame;
+
+  // 4초 뒤 버튼 표시
+  if (elapsed >= 240) {
+    dateManager.day5EndingReady = true;
+  }
+}
 
   let elapsed = frameCount - dateManager.day5StartFrame;
 
@@ -253,80 +270,74 @@ function updateDay5Sequence() { // 5일차 타이밍 제어
   }
 }
 
-function drawDay5NoiseOverlay() { // 5일차 노이즈 + 카메라 연출
+function drawDay5NoiseOverlay() {
   if (!dateManager || dateManager.currentDay !== 5 || !dateManager.day5StartFrame) return;
-  if (!dateManager.day5CameraTriggered) return;
 
   let elapsed = frameCount - dateManager.day5StartFrame;
-  if (elapsed < 600) return; // 10초 전에는 아무것도 안 그림
 
-  let cameraElapsed = frameCount - day5CameraStartFrame;
-
-  // 6초 뒤 원래 UI로 복귀
-  if (cameraElapsed >= 300) {
-    day5CameraActive = false;
-    dateManager.day5CameraTriggered = false;
-    dateManager.day5EndingReady = true; // 사건의 전말 버튼 띄울 준비 완료
-    return;
-  }
-
-  // 카메라 화면 먼저 그리기
+  // 카메라 화면은 계속 유지
   if (webcam) {
     push();
     translate(width, 0);
     scale(-1, 1);
-
-    // 색을 살리기 위해 tint / filter / gray 효과를 쓰지 않음
     image(webcam, 0, 0, width, height);
-
     pop();
   }
 
-  // 화면 전체 노이즈
-  let intensity = constrain(map(cameraElapsed, 0, 360, 0.25, 1), 0.25, 1);
+  // 처음 4초 동안만 노이즈 + 손바닥 연출
+  if (elapsed < 240) {
+    let intensity = constrain(map(elapsed, 0, 240, 0.25, 1), 0.25, 1);
 
-  noStroke();
-  for (let i = 0; i < 300 * intensity; i++) {
-    if (random() < 0.5) {
-      fill(255, random(10, 90) * intensity);
-    } else {
-      fill(0, random(10, 80) * intensity);
+    noStroke();
+    for (let i = 0; i < 300 * intensity; i++) {
+      if (random() < 0.5) {
+        fill(255, random(10, 90) * intensity);
+      } else {
+        fill(0, random(10, 80) * intensity);
+      }
+      rect(random(width), random(height), random(1, 4), random(1, 4));
     }
-    rect(random(width), random(height), random(1, 4), random(1, 4));
+
+    for (let i = 0; i < 10 * intensity; i++) {
+      fill(random() < 0.5 ? 255 : 0, random(30, 100) * intensity);
+      rect(0, random(height), width, random(2, 10));
+    }
+
+    if (day5HandImg) {
+      let stampCount = 18;
+      let stampSize = min(width, height) * 0.33;
+
+      for (let i = 0; i < stampCount; i++) {
+        let p = random();
+        let x = lerp(-stampSize * 0.2, width + stampSize * 0.2, p);
+        let y = lerp(-stampSize * 0.2, height + stampSize * 0.2, random());
+        let alpha = random(90, 220);
+
+        push();
+        translate(x, y);
+        rotate(random(-0.35, 0.35));
+        imageMode(CENTER);
+        tint(255, alpha);
+        image(day5HandImg, 0, 0, stampSize, stampSize);
+        noTint();
+        pop();
+      }
+    }
+  }
+}
+
+function startEndingVideo() {
+  endingVideoPlaying = true;
+  endingVideo.time(0);
+  endingVideo.play();
+
+  if (phone && phone.instagram) {
+    phone.instagram.currentScreen = "endingVideo";
   }
 
-  for (let i = 0; i < 10 * intensity; i++) {
-    fill(random() < 0.5 ? 255 : 0, random(30, 100) * intensity);
-    rect(0, random(height), width, random(2, 10));
-  }
-
-  // 손바닥 PNG를 1/3 정도 크기로 빠르게 다다다닥 찍기
-  if (day5HandImg) {
-    let stampCount = 18; // 한 프레임에 찍는 개수
-    let stampSize = min(width, height) * 0.33; // 대략 1/3 크기
-
-    for (let i = 0; i < stampCount; i++) {
-      let p = random();
-      let x = lerp(-stampSize * 0.2, width + stampSize * 0.2, p);
-      let y = lerp(-stampSize * 0.2, height + stampSize * 0.2, random());
-      let alpha = random(90, 220);
-
-      push();
-      translate(x, y);
-      rotate(random(-0.35, 0.35));
-      imageMode(CENTER);
-      tint(255, alpha);
-      image(day5HandImg, 0, 0, stampSize, stampSize);
-      noTint();
-      pop();
-    }
-  }
-  function startEndingVideo() {
-    endingVideoPlaying = true;
-    endingVideo.time(0);
-    endingVideo.play();
-    if (phone && phone.instagram) {
-      phone.instagram.currentScreen = "endingVideo";
-    }
+  if (dateManager) {
+    dateManager.day5EndingReady = false;
+    dateManager.day5SequenceFinished = true;
+    dateManager.day5CameraTriggered = false;
   }
 }
