@@ -201,6 +201,7 @@ function draw() {
       } else if (!(dateManager && dateManager.currentDay === 5)) {
         room.displayNextDayButton();
       }
+    }
     
     monologue.update();
     monologue.display();
@@ -233,7 +234,8 @@ function mousePressed() {
         room.checkClick(mouseX, mouseY); 
       }
     }
-  }
+  
+}
 }
 
 function mouseWheel(event) {
@@ -268,7 +270,7 @@ function updateDay5Sequence() {
     day5CameraActive = true;
     day5CameraStartFrame = frameCount;
   }
-}
+
 
 function drawDay5NoiseOverlay() {
   if (!dateManager || dateManager.currentDay !== 5 || !dateManager.day5StartFrame) return;

@@ -21,7 +21,11 @@ class InstagramDM {
     if (chatData && Array.isArray(chatData)) {
       this.chatRooms = chatData;
     } else {
-      this.chatRooms = []; // 데이터가 없으면 빈 배열
+      this.chatRooms = [];
+    }
+
+    for (let i = 0; i < this.chatRooms.length; i++) {
+      this.normalizeChatRoom(this.chatRooms[i]);
     }
   }
 
@@ -182,15 +186,253 @@ openChatRoom(index) {
     }
   }
 
+  resolveUser(userOrKey) {
+    if (!userOrKey) return null;
+
+    // 이미 User 객체가 들어온 경우
+    if (typeof userOrKey === "object" && typeof userOrKey.displayProfile === "function") {
+      return userOrKey;
+    }
+
+    // "최지안" 같은 문자열 키가 들어온 경우
+    if (typeof userOrKey === "string") {
+      if (
+        typeof dateManager !== "undefined" &&
+        dateManager.users &&
+        dateManager.users[userOrKey]
+      ) {
+        return dateManager.users[userOrKey];
+      }
+    }
+
+    return null;
+  }
+
+  getRoomMembers(room) {
+    let raw = room.users || room.members || [];
+
+    let members = [];
+    for (let i = 0; i < raw.length; i++) {
+      let u = this.resolveUser(raw[i]);
+      if (u) members.push(u);
+    }
+
+    return members;
+  }
+
+  normalizeChatRoom(room) {
+    if (!room.messages) room.messages = [];
+
+    // 단체 채팅 멤버 이름 자동 생성
+    if (room.isGroup && !room.memberNames) {
+      room.memberNames = [];
+
+      let raw = room.users || room.members || [];
+      for (let i = 0; i < raw.length; i++) {
+        if (typeof raw[i] === "string") {
+          room.memberNames.push(raw[i]);
+        } else if (raw[i] && raw[i].name) {
+          room.memberNames.push(raw[i].name);
+        }
+      }
+    }
+
+    // 메시지 기본 방향 정리
+    for (let i = 0; i < room.messages.length; i++) {
+      let m = room.messages[i];
+      if (m.separator) continue;
+
+      let hasSender =
+        m.user ||
+        m.sender ||
+        m.senderName ||
+        m.userKey;
+
+      // sent가 아예 없고, 보낸 유저도 없으면 플레이어 채팅으로 처리
+      if (m.sent === undefined) {
+        m.sent = !hasSender;
+      }
+
+      // 보낸 유저가 있으면 상대방 채팅
+      if (hasSender) {
+        m.sent = false;
+      }
+    }
+  }
+
+  getMessageInfo(m, room) {
+    if (!m) {
+      return {
+        sent: true,
+        user: this.resolveUser("주인공"),
+        name: "나",
+        color: [70, 120, 245]
+      };
+    }
+
+    let hasSender =
+      m.user ||
+      m.sender ||
+      m.senderName ||
+      m.userKey;
+
+    // sent:true 이거나, 유저 정보가 없고 sent:false도 아니면 플레이어 채팅
+    let isMine = m.sent === true || (!hasSender && m.sent !== false);
+
+    if (isMine) {
+      return {
+        sent: true,
+        user: this.resolveUser("주인공"),
+        name: "나",
+        color: [70, 120, 245]
+      };
+    }
+
+    let senderKey = m.sender || m.senderName || m.userKey || "";
+    let user =
+      this.resolveUser(m.user) ||
+      this.resolveUser(senderKey) ||
+      room.user ||
+      null;
+
+    let info = null;
+    if (this.ui && typeof this.ui.getSenderInfo === "function") {
+      info = this.ui.getSenderInfo(senderKey);
+    }
+
+    if (!user && info && info.user) {
+      user = info.user;
+    }
+
+    let displayName =
+      m.senderName ||
+      m.sender ||
+      (user && user.name) ||
+      room.name ||
+      "?";
+
+    let color =
+      m.color ||
+      (info && info.color) ||
+      room.avatarColor ||
+      [130, 130, 140];
+
+    return {
+      sent: false,
+      user,
+      name: displayName,
+      color
+    };
+  }
+
+  drawUserProfile(user, x, y, sz, fallbackName = "?") {
+    if (user && typeof user.displayProfile === "function") {
+      user.displayProfile(x, y, sz);
+      return;
+    }
+
+    noStroke();
+    fill(80);
+    circle(x, y, sz);
+
+    fill(255);
+    textAlign(CENTER, CENTER);
+    textStyle(BOLD);
+    textSize(sz * 0.42);
+    text(String(fallbackName).charAt(0), x, y + 1);
+    textStyle(NORMAL);
+  }
+
+  drawGroupAvatar(room, x, y, sz) {
+    let members = this.getRoomMembers(room);
+
+    noStroke();
+    fill(35);
+    circle(x, y, sz);
+
+    if (members.length === 0) {
+      fill(90);
+      circle(x, y, sz * 0.82);
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textStyle(BOLD);
+      textSize(sz * 0.35);
+      text(room.name ? room.name.charAt(0) : "G", x, y + 1);
+      textStyle(NORMAL);
+      return;
+    }
+
+    let count = min(members.length, 4);
+    let d = count === 1 ? sz * 0.82 : sz * 0.55;
+
+    let positions = [];
+
+    if (count === 1) {
+      positions = [{ x: x, y: y }];
+    } else if (count === 2) {
+      positions = [
+        { x: x - sz * 0.16, y: y },
+        { x: x + sz * 0.16, y: y }
+      ];
+    } else if (count === 3) {
+      positions = [
+        { x: x, y: y - sz * 0.17 },
+        { x: x - sz * 0.18, y: y + sz * 0.16 },
+        { x: x + sz * 0.18, y: y + sz * 0.16 }
+      ];
+    } else {
+      positions = [
+        { x: x - sz * 0.16, y: y - sz * 0.16 },
+        { x: x + sz * 0.16, y: y - sz * 0.16 },
+        { x: x - sz * 0.16, y: y + sz * 0.16 },
+        { x: x + sz * 0.16, y: y + sz * 0.16 }
+      ];
+    }
+
+    for (let i = 0; i < count; i++) {
+      let p = positions[i];
+
+      // 프로필 사이에 테두리처럼 보이게 배경 원 먼저 그림
+      noStroke();
+      fill(20);
+      circle(p.x, p.y, d + 4);
+
+      this.drawUserProfile(members[i], p.x, p.y, d, "?");
+    }
+
+    if (members.length > 4) {
+      fill(0, 170);
+      circle(x + sz * 0.22, y + sz * 0.22, d);
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(10);
+      textStyle(BOLD);
+      text("+" + (members.length - 4), x + sz * 0.22, y + sz * 0.22);
+      textStyle(NORMAL);
+    }
+  }
+
   drawChatAvatar(room, x, y, sz) {
+    if (room.isGroup) {
+      this.drawGroupAvatar(room, x, y, sz);
+      return;
+    }
+
     if (room.user && room.user.displayProfile) {
       room.user.displayProfile(x, y, sz);
       return;
     }
+
     let c = room.avatarColor || [110, 110, 110];
-    noStroke(); fill(c[0], c[1], c[2]); circle(x, y, sz);
-    fill(255); textAlign(CENTER, CENTER); textStyle(BOLD); textSize(sz * 0.42);
-    text(room.name.charAt(0), x, y + 1);
+    noStroke();
+    fill(c[0], c[1], c[2]);
+    circle(x, y, sz);
+
+    fill(255);
+    textAlign(CENTER, CENTER);
+    textStyle(BOLD);
+    textSize(sz * 0.42);
+    text(room.name ? room.name.charAt(0) : "?", x, y + 1);
     textStyle(NORMAL);
   }
 
@@ -285,9 +527,15 @@ openChatRoom(index) {
     
     let preview = "";
     if (last) {
-      if (last.sent) preview = "나: " + last.text;
-      else if (room.isGroup && last.sender) preview = last.sender + ": " + last.text;
-      else preview = last.text;
+      let msgInfo = this.getMessageInfo(last, room);
+
+      if (msgInfo.sent) {
+        preview = "나: " + last.text;
+      } else if (room.isGroup) {
+        preview = msgInfo.name + ": " + last.text;
+      } else {
+        preview = last.text;
+      }
     }
     if (preview.length > 22) preview = preview.slice(0, 22) + "…";
 
@@ -311,6 +559,11 @@ openChatRoom(index) {
       pop();
     }
     textStyle(NORMAL);
+
+      if (room.active && !room.isGroup) {
+      noStroke(); fill(20); circle(ax + 18, cy + 17, 16);
+      fill(80, 220, 120); circle(ax + 18, cy + 17, 11);
+    }
   }
 
   // 💡 수학적으로 길이를 계산해 박스가 글씨를 완벽하게 감싸도록 폰트 환경 강제 초기화
@@ -341,75 +594,122 @@ openChatRoom(index) {
     return lines;
   }
 
-  layoutChatMessages() {
+    layoutChatMessages() {
     const w = this.ui.w;
-    let isGroup = this.room().isGroup;
-    let avatarSlot = isGroup ? 36 : 0;
-    let maxBubbleW = (w - avatarSlot) * 0.7;
-    let padX = 14, padY = 10, lineH = 19, gap = 6, topPad = 14;
-    let nameH = 16, sepH = 30;
+    let room = this.room();
+    let isGroup = room && room.isGroup;
 
-    textSize(14); textStyle(NORMAL); textFont("Arial");
+    // 1:1 채팅에서도 상대 프로필을 보여주기 위해 항상 왼쪽 아바타 공간 확보
+    let avatarSlot = 36;
+    let maxBubbleW = (w - avatarSlot) * 0.7;
+
+    let padX = 14;
+    let padY = 10;
+    let lineH = 19;
+    let gap = 6;
+    let topPad = 14;
+    let nameH = 16;
+    let sepH = 30;
+
+    textSize(14);
+    textStyle(NORMAL);
+    textFont("Arial");
+
     let items = [];
     let y = topPad;
     let prevKey = null;
-    let msgs = this.room().messages || [];
+    let msgs = room.messages || [];
 
     for (let i = 0; i < msgs.length; i++) {
       let m = msgs[i];
+
       if (m.separator) {
-        items.push({ type: "separator", text: m.separator, top: y, height: sepH });
-        y += sepH; prevKey = null; continue;
+        items.push({
+          type: "separator",
+          text: m.separator,
+          top: y,
+          height: sepH
+        });
+
+        y += sepH;
+        prevKey = null;
+        continue;
       }
 
-      let key = m.sent ? "__me" : (m.sender || "_other");
-      let sameAsPrev = (key === prevKey);
-      let showName = isGroup && !m.sent && !sameAsPrev;
+      let info = this.getMessageInfo(m, room);
+      let key = info.sent ? "__me" : info.name;
+      let sameAsPrev = key === prevKey;
 
-      if (sameAsPrev) y -= 2;
-      else if (prevKey !== null) y += 2;
-      if (showName) y += nameH;
+      // 단체 채팅에서는 상대방 이름 표시
+      let showName = isGroup && !info.sent && !sameAsPrev;
+
+      if (sameAsPrev) {
+        y -= 2;
+      } else if (prevKey !== null) {
+        y += 2;
+      }
+
+      if (showName) {
+        y += nameH;
+      }
 
       let lines = this.wrapText(m.text, maxBubbleW - padX * 2);
       let maxLineW = 0;
-      for (let ln of lines) maxLineW = max(maxLineW, textWidth(ln));
-      
+
+      for (let ln of lines) {
+        maxLineW = max(maxLineW, textWidth(ln));
+      }
+
       let bw = min(maxBubbleW, maxLineW + padX * 2);
       let bh = lines.length * lineH + padY * 2;
 
-      let nextKey = null;
-      if (i + 1 < msgs.length) {
-        let nm = msgs[i + 1];
-        if (!nm.separator) nextKey = nm.sent ? "__me" : (nm.sender || "_other");
-      }
-      let isLastInRun = (nextKey !== key);
-
       items.push({
         type: "bubble",
-        sender: m.sender, sent: m.sent,
-        lines, bw, bh, top: y,
+        sender: info.name,
+        user: info.user,
+        color: info.color,
+        sent: info.sent,
+        lines,
+        bw,
+        bh,
+        top: y,
         showName,
-        showAvatar: isGroup && !m.sent && isLastInRun,
+        // 모든 상대 메시지 옆에 프로필 표시
+        showAvatar: !info.sent
       });
 
       y += bh + gap;
       prevKey = key;
     }
 
-    if (this.room().seen) y += 16;
-    return { items, totalH: y + 8, avatarSlot, isGroup, padX, padY, lineH };
+    if (room.seen) y += 16;
+
+    return {
+      items,
+      totalH: y + 8,
+      avatarSlot,
+      isGroup,
+      padX,
+      padY,
+      lineH
+    };
   }
 
-  displayChatRoom(appMouse) {
-    const w = this.ui.w, h = this.ui.h;
-    let headerH = 70, inputH = 60;
+   displayChatRoom(appMouse) {
+    const w = this.ui.w;
+    const h = this.ui.h;
+
+    let headerH = 70;
+    let inputH = 60;
 
     push();
     drawingContext.save();
     this.ui.createRectClip(0, headerH, w, h - headerH - inputH);
 
     let layout = this.layoutChatMessages();
-    let padX = layout.padX, padY = layout.padY, lineH = layout.lineH;
+    let padX = layout.padX;
+    let padY = layout.padY;
+    let lineH = layout.lineH;
     let baseY = headerH + 6 - this.chatScrollY;
     let lastSent = null;
     let avatarSlot = layout.avatarSlot;
@@ -419,61 +719,87 @@ openChatRoom(index) {
 
       if (it.type === "separator") {
         if (y > h || y + it.height < headerH) continue;
-        stroke(60); strokeWeight(1);
+
+        stroke(60);
+        strokeWeight(1);
         line(20, y + it.height / 2, w / 2 - 36, y + it.height / 2);
         line(w / 2 + 36, y + it.height / 2, w - 20, y + it.height / 2);
-        noStroke(); fill(150);
-        textAlign(CENTER, CENTER); textStyle(NORMAL); textSize(11);
+
+        noStroke();
+        fill(150);
+        textAlign(CENTER, CENTER);
+        textStyle(NORMAL);
+        textSize(11);
         text(it.text, w / 2, y + it.height / 2);
         continue;
       }
 
-      if (it.sent) lastSent = { it, y };
+      if (it.sent) {
+        lastSent = { it, y };
+      }
+
       if (y > h || y + it.bh < headerH) continue;
 
+      // 단체 채팅에서 이름 표시
       if (it.showName) {
-        let info = this.ui.getSenderInfo(it.sender);
-        noStroke(); fill(info.color[0], info.color[1], info.color[2]);
-        textAlign(LEFT, BASELINE); textStyle(NORMAL); textSize(11);
+        noStroke();
+        fill(it.color[0], it.color[1], it.color[2]);
+        textAlign(LEFT, BASELINE);
+        textStyle(NORMAL);
+        textSize(11);
         text(it.sender || "", 15 + avatarSlot + 6, y - 4);
       }
 
       let bx;
+
       noStroke();
-      if (it.sent) { bx = w - 15 - it.bw; fill(70, 120, 245); }
-      else        { bx = 15 + avatarSlot; fill(48); }
+
+      if (it.sent) {
+        // 플레이어 말풍선
+        bx = w - 15 - it.bw;
+        fill(70, 120, 245);
+      } else {
+        // 상대방 말풍선
+        bx = 15 + avatarSlot;
+        fill(48);
+      }
+
       rect(bx, y, it.bw, it.bh, 18);
 
-      // 💡 텍스트를 박스 Y축 기준으로 수직 중앙 정렬(CENTER)하고 미세 오차(-1.5px)를 빼서 완벽히 맞춤
-      fill(255); textAlign(LEFT, CENTER); textStyle(NORMAL); textSize(14);
+      fill(255);
+      textAlign(LEFT, CENTER);
+      textStyle(NORMAL);
+      textSize(14);
+
       for (let li = 0; li < it.lines.length; li++) {
-        let centerY = y + padY + (lineH / 2) + (li * lineH);
+        let centerY = y + padY + lineH / 2 + li * lineH;
         text(it.lines[li], bx + padX, centerY - 1.5);
       }
 
+      // 상대 메시지 옆 프로필
       if (it.showAvatar) {
-        let info = this.ui.getSenderInfo(it.sender);
-        let cax = 15 + 13, cay = y + it.bh - 13;
-        if (info.user && info.user.displayProfile) {
-          info.user.displayProfile(cax, cay, 26);
-        } else {
-          noStroke(); fill(info.color[0], info.color[1], info.color[2]);
-          circle(cax, cay, 26);
-          fill(255); textAlign(CENTER, CENTER); textStyle(BOLD); textSize(11);
-          text((it.sender || "?").charAt(0), cax, cay + 1);
-          textStyle(NORMAL);
-        }
+        let cax = 15 + 13;
+        let cay = y + it.bh - 13;
+        this.drawUserProfile(it.user, cax, cay, 26, it.sender);
       }
     }
 
     let allMsgs = this.room().messages || [];
     let lastRealMsg = null;
+
     for (let i = allMsgs.length - 1; i >= 0; i--) {
-      if (!allMsgs[i].separator) { lastRealMsg = allMsgs[i]; break; }
+      if (!allMsgs[i].separator) {
+        lastRealMsg = allMsgs[i];
+        break;
+      }
     }
-    if (this.room().seen && lastSent && lastRealMsg && lastRealMsg.sent) {
-      noStroke(); fill(150);
-      textAlign(RIGHT, TOP); textStyle(NORMAL); textSize(11);
+
+    if (this.room().seen && lastSent && lastRealMsg && this.getMessageInfo(lastRealMsg, this.room()).sent) {
+      noStroke();
+      fill(150);
+      textAlign(RIGHT, TOP);
+      textStyle(NORMAL);
+      textSize(11);
       text("읽음", w - 16, lastSent.y + lastSent.it.bh + 3);
     }
 
@@ -504,14 +830,30 @@ openChatRoom(index) {
 
     noStroke(); fill(255);
     textAlign(LEFT, BASELINE); textStyle(BOLD); textSize(15);
-    let hasSub = (room.active && !room.isGroup) || (room.isGroup && room.memberNames);
+        let memberCount = 0;
+
+    if (room.isGroup) {
+      memberCount = this.getRoomMembers(room).length;
+
+      if (memberCount === 0 && room.memberNames) {
+        memberCount = room.memberNames.length;
+      }
+    }
+
+    let hasSub = (room.active && !room.isGroup) || (room.isGroup && memberCount > 0);
+
     text(room.name, 84, hasSub ? 32 : 40);
+
     if (room.active && !room.isGroup) {
-      fill(150); textStyle(NORMAL); textSize(11);
+      fill(150);
+      textStyle(NORMAL);
+      textSize(11);
       text(room.activeText || "활동 중", 84, 48);
-    } else if (room.isGroup && room.memberNames) {
-      fill(150); textStyle(NORMAL); textSize(11);
-      text(room.memberNames.length + "명", 84, 48);
+    } else if (room.isGroup && memberCount > 0) {
+      fill(150);
+      textStyle(NORMAL);
+      textSize(11);
+      text(memberCount + "명", 84, 48);
     }
 
     stroke(255); strokeWeight(2); noFill(); strokeJoin(ROUND);

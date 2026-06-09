@@ -111,6 +111,60 @@ class DateManager {
         monoText: "엄마한테서 온 연락이다... 뭐라고 답장해야 할까.",
         messages: [{ text: "밥은 챙겨 먹고 다니니?", sent: false }]
       });
+      dailyChats.push({
+  name: "여행 멤버들",
+  isGroup: true,
+
+  // 단체방 프로필에 합쳐서 보일 유저들
+  users: [
+    this.users["박서아"],
+    this.users["최지안"],
+    this.users["정수아"],
+    this.users["이서준"]
+  ],
+
+  // 상단에 몇 명인지 표시하거나, 이름을 직접 쓰고 싶을 때 사용
+  memberNames: ["박서아", "최지안", "정수아", "이서준"],
+
+  active: false,
+  unread: true,
+  seen: false,
+  time: "방금",
+  monoText: "단체 채팅방에 오랜만에 메시지가 올라왔다.",
+
+  messages: [
+    { separator: "오늘" },
+
+    {
+      text: "다들 뉴스 봤어?",
+      sender: "최지안",
+      user: this.users["최지안"]
+    },
+
+    {
+      text: "봤어. 그 장소 맞는 것 같던데...",
+      sender: "정수아",
+      user: this.users["정수아"]
+    },
+
+    {
+      text: "잠깐만, 그럼 서아가 올린 스토리랑 이어지는 거 아니야?",
+      sender: "이서준",
+      user: this.users["이서준"]
+    },
+
+    // user/sender가 없으므로 플레이어 쪽 채팅
+    {
+      text: "나도 다시 확인해볼게."
+    },
+
+    {
+      text: "빨리 확인해줘. 뭔가 이상해.",
+      sender: "박서아",
+      user: this.users["박서아"]
+    }
+  ]
+});
     } 
     // ================= [ 2일차 ] =================
     else if (this.currentDay === 2) {
