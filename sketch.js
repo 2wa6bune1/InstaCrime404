@@ -96,7 +96,7 @@ function setup() {
   webcam.elt.muted = true;
   webcam.elt.autoplay = true;
   webcam.elt.play();
-  endingVideo = createVideo("assets/endingVedioTest.mp4");
+  endingVideo = createVideo("assets/endingVideoTest.mp4");
   endingVideo.hide();
 
   clueHighlight = new Highlight("결정적 증거", 200, 150);
