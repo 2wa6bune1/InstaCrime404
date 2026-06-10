@@ -12,6 +12,16 @@ class StoryUploader {
     this.cameraStartFrame = 0;
     this.ghostEffectDone = false;
 
+    // 4일차 연출
+    this.mainCameraActive = false;
+    this.mainCameraStartFrame = 0;
+    this.mainHandBurstStarted = false;
+    this.mainHandBurstStartFrame = 0;
+
+    // 4일차 ; 2초 뒤 손자국 시작, 시작 후 3초 뒤 종료
+    this.mainCameraVisibleFrames = 120; // 2초
+    this.mainHandBurstFrames = 180;     // 3초
+
     // 귀신 연출 길이
     this.ghostEffectDuration = 240;
 
@@ -76,14 +86,16 @@ class StoryUploader {
 
   // InstagramUI에서 호출하는 메인 display 함수
   display(appMouse = { x: -999, y: -999 }) {
-    if (this.mode === "camera") {
-      this.displayCameraScreen(appMouse);
-    } else if (this.mode === "tag") {
-      this.displayTagScreen(appMouse);
-    } else if (this.mode === "result") {
-      this.displayResultScreen(appMouse);
-    }
+  if (this.mode === "camera") {
+    this.displayCameraScreen(appMouse);
+  } else if (this.mode === "tag") {
+    this.displayTagScreen(appMouse);
+  } else if (this.mode === "result") {
+    this.displayResultScreen(appMouse);
+  } else if (this.mode === "mainCamera") {
+    this.displayMainCameraScreen(appMouse);
   }
+}
 
   // ======================================================
   // 1. 카메라 화면
@@ -706,14 +718,18 @@ class StoryUploader {
   // 클릭 처리
   // ======================================================
   handleClick(mx, my) {
-    if (this.mode === "camera") {
-      this.handleCameraClick(mx, my);
-    } else if (this.mode === "tag") {
-      this.handleTagClick(mx, my);
-    } else if (this.mode === "result") {
-      this.handleResultClick(mx, my);
-    }
+  if (this.mode === "mainCamera") {
+    return;
   }
+
+  if (this.mode === "camera") {
+    this.handleCameraClick(mx, my);
+  } else if (this.mode === "tag") {
+    this.handleTagClick(mx, my);
+  } else if (this.mode === "result") {
+    this.handleResultClick(mx, my);
+  }
+}
 
   handleCameraClick(mx, my) {
     let w = this.instagramUI.w;
@@ -810,40 +826,38 @@ class StoryUploader {
   // 업로드 및 결과 처리
   // ======================================================
   uploadTaggedStory() {
-    // 현재 기획상 진범은 주인공/??? 계정
-    if (this.selectedTarget === "main") {
-      this.resultType = "true";
-    } else {
-      this.resultType = "false";
-    }
-
-    let storyImg = this.createTaggedStoryImage();
-
-    // 내 스토리에 추가
-    this.instagramUI.addMyStory(storyImg);
-
-    // 결과 저장
-    if (typeof dateManager !== "undefined") {
-      dateManager.uploadedToday = true;
-
-      // 기존 accuse 변수도 호환용으로 같이 저장
-      dateManager.accusedSuspect = this.selectedTarget;
-      dateManager.accuseResult = this.resultType;
-
-      // 태그 방식 전용 저장값
-      dateManager.taggedTarget = this.selectedTarget;
-      dateManager.taggedHandle = this.getTargetById(this.selectedTarget).handle;
-      dateManager.storyUploadResult = this.resultType;
-
-      if (!dateManager.uploadedStories) {
-        dateManager.uploadedStories = {};
-      }
-
-      dateManager.uploadedStories[dateManager.currentDay] = storyImg;
-    }
-
-    this.mode = "result";
+  if (this.selectedTarget === "main") {
+    this.resultType = "true";
+  } else {
+    this.resultType = "false";
   }
+
+  let storyImg = this.createTaggedStoryImage();
+
+  this.instagramUI.addMyStory(storyImg);
+
+  if (typeof dateManager !== "undefined") {
+    dateManager.uploadedToday = true;
+    dateManager.accusedSuspect = this.selectedTarget;
+    dateManager.accuseResult = this.resultType;
+    dateManager.taggedTarget = this.selectedTarget;
+    dateManager.taggedHandle = this.getTargetById(this.selectedTarget).handle;
+    dateManager.storyUploadResult = this.resultType;
+
+    if (!dateManager.uploadedStories) {
+      dateManager.uploadedStories = {};
+    }
+    dateManager.uploadedStories[dateManager.currentDay] = storyImg;
+  }
+
+  // main을 골랐을 때만 카메라 연출로 전환
+  if (this.selectedTarget === "main") {
+    this.startMainCameraSequence();
+    return;
+  }
+
+  this.mode = "result";
+}
 
   createTaggedStoryImage() {
     let w = this.instagramUI.w;
@@ -918,4 +932,86 @@ class StoryUploader {
       handle: "@unknown"
     };
   }
+
+  startMainCameraSequence() {
+  this.mode = "mainCamera";
+  this.mainCameraStartFrame = frameCount;
+  this.mainHandBurstStarted = false;
+  this.mainHandBurstStartFrame = 0;
+}
+
+displayMainCameraScreen(appMouse) {
+  let w = this.instagramUI.w; // 390
+  let h = this.instagramUI.h; // 700
+
+  background(0);
+
+  // 카메라 화면
+  if (typeof webcam !== "undefined" && webcam) {
+    push();
+    translate(w, 0);
+    scale(-1, 1);
+    image(webcam, 0, 0, w, h);
+    pop();
+  }
+
+  let elapsed = frameCount - this.mainCameraStartFrame;
+
+  // 2초 뒤 손자국 시작
+  if (!this.mainHandBurstStarted && elapsed >= 120) {
+    this.mainHandBurstStarted = true;
+    this.mainHandBurstStartFrame = frameCount;
+  }
+
+  // 손자국 연출
+  if (this.mainHandBurstStarted) {
+    this.displayBloodHandBurst(w, h);
+
+    // 손자국 시작 후 3초 지나면 자동 종료
+    if (frameCount - this.mainHandBurstStartFrame >= 180) {
+      this.closeMainCamera();
+    }
+  }
+}
+
+displayBloodHandBurst(w, h) {
+  if (typeof day5HandImg === "undefined" || !day5HandImg) return;
+
+  let elapsed = frameCount - this.mainHandBurstStartFrame;
+  let progress = constrain(elapsed / 180, 0, 1);
+  let count = floor(lerp(12, 35, progress));
+
+  push();
+  imageMode(CENTER);
+
+  for (let i = 0; i < count; i++) {
+    let x = random(-30, w + 30);
+    let y = random(-30, h + 30);
+    let s = random(w * 0.18, w * 0.45);
+    let a = random(140, 255);
+
+    push();
+    translate(x, y);
+    rotate(random(-0.8, 0.8));
+    tint(255, a);
+    image(day5HandImg, 0, 0, s, s);
+    noTint();
+    pop();
+  }
+
+  imageMode(CORNER);
+  pop();
+}
+
+closeMainCamera() {
+  this.mode = "camera";
+  this.mainHandBurstStarted = false;
+  this.mainHandBurstStartFrame = 0;
+  this.mainCameraStartFrame = 0;
+  this.instagramUI.currentScreen = "feed";
+}
+
+
+
+
 }
