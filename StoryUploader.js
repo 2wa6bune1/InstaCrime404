@@ -5,7 +5,7 @@ class StoryUploader {
   constructor(instagramUI) {
     this.instagramUI = instagramUI;
 
-    // 화면 단계: camera → tag → result
+    // 화면 단계: camera -> tag -> result
     this.mode = "camera";
 
     // 카메라/귀신 연출 상태
@@ -19,28 +19,37 @@ class StoryUploader {
     this.selectedTarget = null;
     this.resultType = null;
 
+    // 독백 상태
+    this.tagIntroMonoPlayed = false;
+    this.tagIntroMonoText = "이제 범인을 태그해서 스토리에 올려야 한다. 누구를 태그해야 하지?";
+    this.wrongTargetMonoText = "아니야... 이 사람은 아닌 것 같다.";
+
     // 태그 후보
     // main은 정답 후보지만, 화면에는 "나"가 아니라 ??? 계정처럼 보이게 처리
     this.tagTargets = [
       {
         id: "jian",
         name: "최지안",
-        handle: "@its_ji.anni"
+        handle: "@its_ji.anni",
+        monoText: "지안이는 아닌 것 같다. 뭔가 맞지 않아."
       },
       {
         id: "sua",
         name: "정수아",
-        handle: "@sua.archive"
+        handle: "@sua.archive",
+        monoText: "수아를 의심했지만... 이건 아닌 것 같다."
       },
       {
         id: "seojun",
         name: "이서준",
-        handle: "@seo_jun.lee"
+        handle: "@seo_jun.lee",
+        monoText: "서준이는 아닌 것 같다. 내가 놓친 게 있다."
       },
       {
         id: "haeun",
         name: "강하은",
-        handle: "@grace_haeun"
+        handle: "@grace_haeun",
+        monoText: "하은이를 태그하면 안 될 것 같다."
       },
       {
         id: "main",
@@ -61,6 +70,8 @@ class StoryUploader {
 
     this.selectedTarget = null;
     this.resultType = null;
+
+    this.tagIntroMonoPlayed = false;
   }
 
   // InstagramUI에서 호출하는 메인 display 함수
@@ -94,11 +105,12 @@ class StoryUploader {
     // 귀신 연출 자리: 현재는 강한 노이즈/글리치
     this.displayGhostEffect(w, h);
 
-    // 촬영 버튼은 보이지만 작동하지 않음
+    // 중앙 카메라 버튼 클릭 시 스토리 작성 화면으로 이동
     this.displayCameraBottomUI(w, h, appMouse);
 
-    // 귀신 연출 종료 후 자동으로 스토리 태그 화면으로 이동
-    this.updateGhostSequence();
+    // 자동 전환 제거
+    // 이제 귀신 연출이 끝나도 자동으로 넘어가지 않고,
+    // 중앙 카메라 버튼을 눌러야 tag 화면으로 넘어감.
   }
 
   displayCameraNoise(w, h) {
@@ -154,29 +166,29 @@ class StoryUploader {
   }
 
   // ======================================================
-  // 귀신 연출 자리
-
+  // 귀신 연출
+  // ======================================================
   displayGhostEffect(w, h) {
     let t = frameCount - this.cameraStartFrame;
-  
+
     // 전체 연출 진행도
     let progress = constrain(t / this.ghostEffectDuration, 0, 1);
-  
+
     // 노이즈 강도: 중간에 가장 강함
     let intensity = sin(progress * PI);
-  
+
     // 1. 기본 강한 노이즈
     let noiseCount = floor(map(intensity, 0, 1, 30, 260));
-  
+
     for (let i = 0; i < noiseCount; i++) {
       noStroke();
-  
+
       if (random() < 0.65) {
         fill(255, random(40, 150) * intensity);
       } else {
         fill(0, random(40, 120) * intensity);
       }
-  
+
       rect(
         random(w),
         random(h),
@@ -184,59 +196,59 @@ class StoryUploader {
         random(1, 5)
       );
     }
-  
+
     // 2. 귀신이 지나가는 구간
     // 45~75프레임 사이에만 등장
     let ghostStart = 45;
     let ghostEnd = 75;
-  
+
     if (t >= ghostStart && t <= ghostEnd) {
       let ghostProgress = map(t, ghostStart, ghostEnd, 0, 1);
-  
+
       // 왼쪽 밖에서 오른쪽 밖으로 빠르게 이동
       let ghostX = lerp(-120, w + 120, ghostProgress);
-  
+
       // 살짝 위아래로 흔들림
       let ghostY = h / 2 - 40 + sin(t * 0.45) * 12;
-  
+
       // 등장 중간에 가장 진하게
       let ghostAlpha = sin(ghostProgress * PI) * 150;
-  
+
       push();
-  
+
       // 약간 블러처럼 보이게 여러 겹 그림
       noStroke();
-  
+
       fill(255, ghostAlpha * 0.18);
       ellipse(ghostX - 18, ghostY + 10, 95, 220);
-  
+
       fill(255, ghostAlpha * 0.32);
       ellipse(ghostX, ghostY, 70, 190);
-  
+
       fill(230, ghostAlpha * 0.45);
       ellipse(ghostX + 10, ghostY - 35, 48, 70);
-  
+
       // 머리카락/그림자 느낌
       fill(0, ghostAlpha * 0.35);
       ellipse(ghostX + 7, ghostY - 55, 58, 80);
-  
+
       // 얼굴 구멍 느낌
       fill(0, ghostAlpha * 0.65);
       ellipse(ghostX - 5, ghostY - 50, 7, 18);
       ellipse(ghostX + 16, ghostY - 50, 7, 18);
-  
+
       // 입처럼 보이는 어두운 구멍
       ellipse(ghostX + 6, ghostY - 20, 13, 28);
-  
+
       pop();
-  
+
       // 귀신이 지나가는 동안 화면 찢김 강화
       for (let i = 0; i < 8; i++) {
         noStroke();
         fill(255, random(20, 90));
         rect(random(-20, 20), random(h), w + random(20, 80), random(2, 8));
       }
-  
+
       // 순간 플래시
       if (random() < 0.25) {
         noStroke();
@@ -244,26 +256,26 @@ class StoryUploader {
         rect(0, 0, w, h);
       }
     }
-  
+
     // 3. 가로줄 글리치
     let glitchLineCount = floor(map(intensity, 0, 1, 1, 10));
-  
+
     for (let i = 0; i < glitchLineCount; i++) {
       let y = random(h);
       let lineH = random(2, 12);
-  
+
       noStroke();
       fill(255, random(20, 80) * intensity);
       rect(0, y, w, lineH);
     }
-  
+
     // 4. 검은 가로줄
     if (random() < 0.35 * intensity) {
       noStroke();
       fill(0, random(80, 180));
       rect(0, random(h), w, random(6, 24));
     }
-  
+
     // 5. 중간 구간 번쩍임
     if (
       t > this.ghostEffectDuration * 0.42 &&
@@ -299,7 +311,6 @@ class StoryUploader {
     text("최근", 59, h - 71);
 
     // 중앙 촬영 버튼
-    // 보이지만 실제 기능은 없음
     push();
     translate(buttonX, buttonY);
 
@@ -313,7 +324,7 @@ class StoryUploader {
     circle(0, 0, 66);
 
     noStroke();
-    fill(255, 90);
+    fill(isShotHover ? 255 : 255, isShotHover ? 130 : 90);
     circle(0, 0, 50);
 
     pop();
@@ -333,13 +344,35 @@ class StoryUploader {
     text("스토리", w / 2, h - 25);
   }
 
+  // 이전 버전 호환용 함수
+  // 현재는 displayCameraScreen에서 자동 호출하지 않음
   updateGhostSequence() {
     let t = frameCount - this.cameraStartFrame;
 
     if (t >= this.ghostEffectDuration && !this.ghostEffectDone) {
-      this.ghostEffectDone = true;
-      this.mode = "tag";
+      this.goToTagScreen();
     }
+  }
+
+  goToTagScreen() {
+    this.ghostEffectDone = true;
+    this.mode = "tag";
+
+    if (
+      !this.tagIntroMonoPlayed &&
+      typeof monologue !== "undefined" &&
+      monologue
+    ) {
+      monologue.start(this.tagIntroMonoText);
+      this.tagIntroMonoPlayed = true;
+    }
+  }
+
+  playWrongTargetMonologue(target) {
+    if (typeof monologue === "undefined" || !monologue) return;
+
+    let text = target.monoText || this.wrongTargetMonoText;
+    monologue.start(text);
   }
 
   // ======================================================
@@ -382,7 +415,7 @@ class StoryUploader {
     let cardX = 35;
     let cardY = 82;
     let cardW = w - 70;
-    let cardH = 260;
+    let cardH = 240;
 
     // 스토리 미리보기 카드
     noStroke();
@@ -392,6 +425,12 @@ class StoryUploader {
     // 어두운 오버레이
     fill(0, 90);
     rect(cardX, cardY, cardW, cardH, 22);
+
+    // 약한 노이즈
+    for (let i = 0; i < 80; i++) {
+      fill(255, random(5, 18));
+      rect(random(cardX, cardX + cardW), random(cardY, cardY + cardH), random(1, 2), random(1, 2));
+    }
 
     // 상단 작은 텍스트
     fill(255, 75);
@@ -405,7 +444,7 @@ class StoryUploader {
     textAlign(CENTER, CENTER);
     textSize(28);
     textStyle(BOLD);
-    text("네가 범인이야", w / 2, cardY + 110);
+    text("네가 범인이야", w / 2, cardY + 105);
 
     // 선택된 태그
     if (this.selectedTarget) {
@@ -414,41 +453,63 @@ class StoryUploader {
       fill(220, 40, 60);
       textSize(24);
       textStyle(BOLD);
-      text(target.handle, w / 2, cardY + 158);
+      text(target.handle, w / 2, cardY + 153);
 
       fill(255, 130);
       textSize(13);
       textStyle(NORMAL);
-      text(target.name + " 태그됨", w / 2, cardY + 195);
+      text(target.name + " 태그됨", w / 2, cardY + 190);
     } else {
       fill(255, 130);
       textSize(22);
       textStyle(BOLD);
-      text("@_____", w / 2, cardY + 158);
+      text("@_____", w / 2, cardY + 153);
 
       fill(255, 100);
       textSize(13);
       textStyle(NORMAL);
-      text("태그할 계정을 선택하세요", w / 2, cardY + 195);
+      text("태그할 계정을 선택하세요", w / 2, cardY + 190);
     }
   }
 
+  getTagListLayout(w, h) {
+    return {
+      titleX: 45,
+      titleY: 356,
+      startY: 382,
+      itemX: 35,
+      itemW: w - 70,
+      itemH: 42,
+      gap: 6
+    };
+  }
+
+  getShareButtonLayout(w, h) {
+    return {
+      buttonX: 45,
+      buttonY: h - 58,
+      buttonW: w - 90,
+      buttonH: 42
+    };
+  }
+
   displayTagTargetList(w, h, appMouse) {
+    let layout = this.getTagListLayout(w, h);
+
     fill(255);
     textAlign(LEFT, CENTER);
     textSize(15);
     textStyle(BOLD);
-    text("태그할 계정", 45, 375);
+    text("태그할 계정", layout.titleX, layout.titleY);
 
-    let startY = 405;
-    let itemX = 35;
-    let itemW = w - 70;
-    let itemH = 48;
-    let gap = 8;
+    let itemX = layout.itemX;
+    let itemW = layout.itemW;
+    let itemH = layout.itemH;
+    let gap = layout.gap;
 
     for (let i = 0; i < this.tagTargets.length; i++) {
       let target = this.tagTargets[i];
-      let y = startY + i * (itemH + gap);
+      let y = layout.startY + i * (itemH + gap);
 
       let isHover =
         appMouse.x >= itemX &&
@@ -467,35 +528,40 @@ class StoryUploader {
       }
 
       noStroke();
-      rect(itemX, y, itemW, itemH, 13);
+      rect(itemX, y, itemW, itemH, 12);
 
       // 프로필 더미 원
       fill(isSelected ? 255 : 70);
-      circle(itemX + 28, y + itemH / 2, 28);
+      circle(itemX + 25, y + itemH / 2, 26);
 
       fill(isSelected ? color(200, 40, 60) : color(180));
       textAlign(CENTER, CENTER);
-      textSize(13);
+      textSize(12);
       textStyle(BOLD);
-      text(target.name.charAt(0), itemX + 28, y + itemH / 2);
+
+      if (target.id === "main") {
+        text("?", itemX + 25, y + itemH / 2);
+      } else {
+        text(target.name.charAt(0), itemX + 25, y + itemH / 2);
+      }
 
       // 이름/핸들
       fill(255);
       textAlign(LEFT, CENTER);
-      textSize(14);
+      textSize(13);
       textStyle(BOLD);
-      text(target.name, itemX + 55, y + 17);
+      text(target.name, itemX + 50, y + 15);
 
       fill(255, 145);
-      textSize(12);
+      textSize(11);
       textStyle(NORMAL);
-      text(target.handle, itemX + 55, y + 34);
+      text(target.handle, itemX + 50, y + 30);
 
       // 선택 체크
       if (isSelected) {
         fill(255);
         textAlign(RIGHT, CENTER);
-        textSize(18);
+        textSize(17);
         textStyle(BOLD);
         text("✓", itemX + itemW - 20, y + itemH / 2);
       }
@@ -503,10 +569,12 @@ class StoryUploader {
   }
 
   displayShareButton(w, h, appMouse) {
-    let buttonX = 45;
-    let buttonY = h - 62;
-    let buttonW = w - 90;
-    let buttonH = 42;
+    let layout = this.getShareButtonLayout(w, h);
+
+    let buttonX = layout.buttonX;
+    let buttonY = layout.buttonY;
+    let buttonW = layout.buttonW;
+    let buttonH = layout.buttonH;
 
     let isHover =
       appMouse.x >= buttonX &&
@@ -531,56 +599,82 @@ class StoryUploader {
   }
 
   // ======================================================
-  // 3. 결과 연결 화면
+  // 3. 결과 화면
   // ======================================================
   displayResultScreen(appMouse) {
     let w = this.instagramUI.w;
     let h = this.instagramUI.h;
 
-    background(8);
+    background(12);
 
     noStroke();
-    fill(15);
+    fill(18);
     rect(0, 0, w, h);
 
     let target = this.getTargetById(this.selectedTarget);
 
+    // 상단
     fill(255);
     textAlign(CENTER, CENTER);
+    textSize(16);
     textStyle(BOLD);
-    textSize(24);
-    text("스토리가 업로드되었습니다", w / 2, 200);
+    text("스토리 업로드 완료", w / 2, 38);
 
-    fill(255, 170);
-    textSize(15);
-    textStyle(NORMAL);
+    // 결과 카드
+    let cardX = 35;
+    let cardY = 115;
+    let cardW = w - 70;
+    let cardH = 360;
+
+    noStroke();
 
     if (this.resultType === "true") {
-      text("무언가가 다시 움직이기 시작합니다.", w / 2, 242);
+      fill(35, 18, 22);
     } else {
-      text("하지만 어딘가 잘못된 것 같습니다.", w / 2, 242);
+      fill(24);
     }
 
-    // 업로드된 스토리 요약
-    fill(30);
-    noStroke();
-    rect(55, 295, w - 110, 120, 18);
+    rect(cardX, cardY, cardW, cardH, 24);
 
-    fill(255, 90);
-    textSize(12);
-    textStyle(NORMAL);
-    text("업로드한 스토리", w / 2, 323);
+    // 노이즈
+    for (let i = 0; i < 90; i++) {
+      fill(255, random(5, 20));
+      rect(random(cardX, cardX + cardW), random(cardY, cardY + cardH), random(1, 2), random(1, 2));
+    }
 
     fill(255);
-    textSize(20);
+    textAlign(CENTER, CENTER);
+
+    textSize(28);
     textStyle(BOLD);
-    text("네가 범인이야", w / 2, 357);
 
-    fill(220, 40, 60);
-    textSize(18);
-    text(target.handle, w / 2, 388);
+    if (this.resultType === "true") {
+      text("스토리가 올라갔다", w / 2, cardY + 95);
 
-    // 계속하기 버튼
+      fill(220, 40, 60);
+      textSize(24);
+      text(target.handle, w / 2, cardY + 150);
+
+      fill(255, 145);
+      textSize(14);
+      textStyle(NORMAL);
+      text("이 계정이 정말 모든 사건의 중심에 있었다.", w / 2, cardY + 205);
+      text("이제 끝을 확인할 시간이다.", w / 2, cardY + 230);
+    } else {
+      text("스토리가 올라갔다", w / 2, cardY + 95);
+
+      fill(220, 40, 60);
+      textSize(24);
+      text(target.handle, w / 2, cardY + 150);
+
+      fill(255, 145);
+      textSize(14);
+      textStyle(NORMAL);
+      text("하지만 뭔가 잘못 짚은 것 같다.", w / 2, cardY + 205);
+      text("다시 생각해봐야 한다.", w / 2, cardY + 230);
+    }
+
+    // 버튼
     let buttonX = 55;
     let buttonY = h - 120;
     let buttonW = w - 110;
@@ -592,11 +686,17 @@ class StoryUploader {
       appMouse.y >= buttonY &&
       appMouse.y <= buttonY + buttonH;
 
-    fill(isHover ? 70 : 50);
+    if (isHover) {
+      fill(230, 60, 80);
+    } else {
+      fill(200, 40, 60);
+    }
+
     noStroke();
     rect(buttonX, buttonY, buttonW, buttonH, 14);
 
     fill(255);
+    textAlign(CENTER, CENTER);
     textSize(15);
     textStyle(BOLD);
     text("계속하기", w / 2, buttonY + buttonH / 2);
@@ -619,16 +719,15 @@ class StoryUploader {
     let w = this.instagramUI.w;
     let h = this.instagramUI.h;
 
-    // 닫기 버튼만 작동
+    // 닫기 버튼
     if (mx < 60 && my < 75) {
       this.close();
       return;
     }
 
-    // 촬영 버튼은 보이지만 작동하지 않음
+    // 중앙 카메라 버튼 클릭 시 스토리 작성 화면으로 이동
     if (dist(mx, my, w / 2, h - 72) < 48) {
-      // 의도적으로 아무 동작도 하지 않음
-      // 귀신 연출이 끝나면 자동으로 태그 화면으로 넘어감
+      this.goToTagScreen();
       return;
     }
   }
@@ -643,16 +742,32 @@ class StoryUploader {
       return;
     }
 
+    // 스토리에 올리기 버튼
+    let shareLayout = this.getShareButtonLayout(w, h);
+
+    if (
+      mx >= shareLayout.buttonX &&
+      mx <= shareLayout.buttonX + shareLayout.buttonW &&
+      my >= shareLayout.buttonY &&
+      my <= shareLayout.buttonY + shareLayout.buttonH
+    ) {
+      if (this.selectedTarget) {
+        this.uploadTaggedStory();
+      }
+      return;
+    }
+
     // 태그 대상 클릭
-    let startY = 405;
-    let itemX = 35;
-    let itemW = w - 70;
-    let itemH = 48;
-    let gap = 8;
+    let listLayout = this.getTagListLayout(w, h);
+
+    let itemX = listLayout.itemX;
+    let itemW = listLayout.itemW;
+    let itemH = listLayout.itemH;
+    let gap = listLayout.gap;
 
     for (let i = 0; i < this.tagTargets.length; i++) {
       let target = this.tagTargets[i];
-      let y = startY + i * (itemH + gap);
+      let y = listLayout.startY + i * (itemH + gap);
 
       if (
         mx >= itemX &&
@@ -661,24 +776,13 @@ class StoryUploader {
         my <= y + itemH
       ) {
         this.selectedTarget = target.id;
+
+        // unknown 계정이 아닌 다른 계정을 누르면 독백 재생
+        if (target.id !== "main") {
+          this.playWrongTargetMonologue(target);
+        }
+
         return;
-      }
-    }
-
-    // 스토리에 올리기 버튼
-    let buttonX = 45;
-    let buttonY = h - 62;
-    let buttonW = w - 90;
-    let buttonH = 42;
-
-    if (
-      mx >= buttonX &&
-      mx <= buttonX + buttonW &&
-      my >= buttonY &&
-      my <= buttonY + buttonH
-    ) {
-      if (this.selectedTarget) {
-        this.uploadTaggedStory();
       }
     }
   }
@@ -757,6 +861,11 @@ class StoryUploader {
       g.rect(random(w), random(h), random(1, 2), random(1, 2));
     }
 
+    // 어두운 비네팅 느낌
+    g.noStroke();
+    g.fill(0, 80);
+    g.rect(0, 0, w, h);
+
     g.noStroke();
     g.fill(255);
     g.textAlign(CENTER, CENTER);
@@ -789,6 +898,10 @@ class StoryUploader {
   close() {
     this.mode = "camera";
     this.ghostEffectDone = false;
+    this.selectedTarget = null;
+    this.resultType = null;
+    this.tagIntroMonoPlayed = false;
+
     this.instagramUI.currentScreen = "feed";
   }
 
