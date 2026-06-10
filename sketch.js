@@ -7,6 +7,7 @@ let room;
 let storyUploader;
 let clueHighlight;
 let monologue; // 독백 시스템 변수 추가
+let bgmManager; //bgm관리자
 
 let webcam; //5일차
 let day5CameraActive = false;
@@ -26,7 +27,9 @@ let news1, news2, news3, news4, news5, news6, news7, news8, news9, seojun1, seoj
 let sooah1, sooah3, sooah4, accountX0, accountX1, accountX2, accountX3, accountX4, accountX5;
 
 function preload() {
-   // imgProfileFriend = loadImage('friendProfile.jpg');
+   bgmManager = new BgmManager();
+   bgmManager.preload(); 
+  // imgProfileFriend = loadImage('friendProfile.jpg');
    imgProfileNews = loadImage('assets/NewsProfile.png');
    imgProfileX = loadImage('assets/imgProfileX.png');
    imgProfileRival = loadImage('assets/sooahProfile.png');
@@ -213,8 +216,13 @@ function draw() {
 function mousePressed() {
   if (gameState === "START") {
     if (mouseX > width/2 - 100 && mouseX < width/2 + 100 && mouseY > height/2 - 20 && mouseY < height/2 + 40) {
+      userStartAudio();
       gameState = "PLAY";
+
+      if (bgmManager) {
+      bgmManager.playForDay(dateManager.currentDay);
     }
+  }
     return;
   }
 
@@ -343,3 +351,4 @@ function startEndingVideo() {
     dateManager.day5CameraTriggered = false;
   }
 }
+
