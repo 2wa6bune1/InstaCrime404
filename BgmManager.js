@@ -9,8 +9,8 @@ class BgmManager {
   }
 
   preload() {
-    this.bgmA = loadSound("Don’t_Look_Back- 전체 bgm.mp3");
-    this.bgmB = loadSound("Found_you - 0일차.mp3");
+    this.bgmA = loadSound('Don’t_Look_Back- 전체 bgm.mp3');
+    this.bgmB = loadSound('Found_you - 0일차.mp3');
   }
 
   playForDay(day) {
