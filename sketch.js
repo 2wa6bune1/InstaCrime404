@@ -58,7 +58,7 @@ function preload() {
   jian4_1 = loadImage("assets/jian4-1.png");
   jian4_2 = loadImage("assets/jian4-2.png");
   jian4_3 = loadImage("assets/jian4-3.png");
-  jian4_4 = loadImage("assets/jian4-4.png");
+  jian4_4 = loadImage("assets/jian4-4.JPG");
 
   news1 = loadImage("assets/news1.png");
   news2 = loadImage("assets/news2.png");
