@@ -100,6 +100,8 @@ class DateManager {
       
       dailyStories.push(new Story(this.users["정수아"], sooah1));
       dailyStories.push(new Story(this.users["이서준"], seojun1));
+
+      
       
       // 포스트
       dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "부산에서 20대 여성, 숨진 채 발견", 328, color(20), news1));
