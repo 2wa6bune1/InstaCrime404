@@ -54,7 +54,7 @@ display() {
     // 💡 박스의 중앙 좌표(boxX, boxY)에서 박스 크기의 절반을 빼서 
     // 실제 박스 시작점(좌측 상단)을 정확히 계산합니다.
     let padding = 25;
-    let boxLeft = boxX;
+    let boxLeft = boxX-30;
     let boxTop = boxY - (boxH / 4);
     
     let textX = boxLeft + padding;
