@@ -114,59 +114,59 @@ class DateManager {
         messages: [{ text: "밥은 챙겨 먹고 다니니?", sent: false }]
       });
       dailyChats.push({
-  name: "여행 멤버들",
-  isGroup: true,
+        name: "여행 멤버들",
+        isGroup: true,
 
-  // 단체방 프로필에 합쳐서 보일 유저들
-  users: [
-    this.users["박서아"],
-    this.users["최지안"],
-    this.users["정수아"],
-    this.users["이서준"]
-  ],
+        // 단체방 프로필에 합쳐서 보일 유저들
+        users: [
+          this.users["박서아"],
+          this.users["최지안"],
+          this.users["정수아"],
+          this.users["이서준"],
+          this.users["강하은"]
+        ],
 
-  // 상단에 몇 명인지 표시하거나, 이름을 직접 쓰고 싶을 때 사용
-  memberNames: ["박서아", "최지안", "정수아", "이서준"],
+        // 상단에 몇 명인지 표시하거나, 이름을 직접 쓰고 싶을 때 사용
+        memberNames: ["박서아", "최지안", "정수아", "이서준", "강하은"],
 
-  active: false,
-  unread: true,
-  seen: false,
-  time: "방금",
-  monoText: "단체 채팅방에 오랜만에 메시지가 올라왔다.",
+        active: false,
+        unread: true,
+        seen: false,
+        time: "방금",
+        monoText: "오랜만에 여행 멤버 단톡방에 메시지가 올라왔다. 다들 충격이 큰가보다.",
 
-  messages: [
-    { separator: "오늘" },
+        messages: [
+          { separator: "오늘" },
 
-    {
-      text: "다들 뉴스 봤어?",
-      sender: "최지안",
-      user: this.users["최지안"]
-    },
+          { text: "다들 뉴스 봤어?",          sender: "정수아", user: this.users["정수아"] },
+          { text: "….",                       sender: "강하은", user: this.users["강하은"] },
+          { text: "봤어",                     sender: "강하은", user: this.users["강하은"] },
+          { text: "사실 아직도 안믿겨",       sender: "정수아", user: this.users["정수아"] },
+          { text: "서아",                     sender: "이서준", user: this.users["이서준"] },
+          { text: "연락되는 사람 없지?",      sender: "이서준", user: this.users["이서준"] },
+          { text: "그때 여행하다가",          sender: "정수아", user: this.users["정수아"] },
+          { text: "먼저 집에 갔었잖아 서아가", sender: "정수아", user: this.users["정수아"] },
+          { text: "나도 그때부터 연락이 안돼..", sender: "강하은", user: this.users["강하은"] },
+          { text: "서준아 힘내…",             sender: "최지안", user: this.users["최지안"] }
+        ]
+      });
 
-    {
-      text: "봤어. 그 장소 맞는 것 같던데...",
-      sender: "정수아",
-      user: this.users["정수아"]
-    },
+      // 최지안과 1:1 DM (오곡동 맛집 가벼운 대화)
+      dailyChats.push({
+        name: "최지안", user: this.users["최지안"], avatarColor: [90, 180, 180], active: false, unread: true, seen: false, time: "방금",
+        monoText: "지안이가 내가 추천한 오곡동 맛집에 다녀왔구나.",
+        messages: [
+          { separator: "오늘" },
 
-    {
-      text: "잠깐만, 그럼 서아가 올린 스토리랑 이어지는 거 아니야?",
-      sender: "이서준",
-      user: this.users["이서준"]
-    },
-
-    // user/sender가 없으므로 플레이어 쪽 채팅
-    {
-      text: "나도 다시 확인해볼게."
-    },
-
-    {
-      text: "빨리 확인해줘. 뭔가 이상해.",
-      sender: "박서아",
-      user: this.users["박서아"]
-    }
-  ]
-});
+          // user/sender가 없으면 플레이어 채팅
+          { text: "오 지안이 오곡동 맛집 갔네!" },
+          { text: "스토리 봄 ㅋㄱㅋㅋ" },
+          { text: "맞아 진짜 맛집이었어!",                  sender: "최지안", user: this.users["최지안"] },
+          { text: "추천 땡큐 ㅎㅎ",                          sender: "최지안", user: this.users["최지안"] },
+          { text: "ㅋㄱㅋㅋ굿" },
+          { text: "하도 맛있다고 하길래 갔다왔어 ㅎㅎ",      sender: "최지안", user: this.users["최지안"] }
+        ]
+      });
     } 
     // ================= [ 2일차 ] =================
     else if (this.currentDay === 2) {
@@ -220,6 +220,49 @@ class DateManager {
       dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "부산 20대 대학생 살인사건, 연쇄살인 수사로 전환", 104, color(20), news2));
       dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "영화 블루 아크 개봉 첫 주 예매 1위! \n@야 나랑 이거 볼래?", 254, color(20), news7));
       
+      // 여행 멤버들 단톡방 — 최지안의 무신경한 행보에 대한 분노
+      dailyChats.push({
+        name: "여행 멤버들",
+        isGroup: true,
+        users: [
+          this.users["박서아"],
+          this.users["최지안"],
+          this.users["정수아"],
+          this.users["이서준"],
+          this.users["강하은"]
+        ],
+        memberNames: ["박서아", "최지안", "정수아", "이서준", "강하은"],
+        active: false,
+        unread: true,
+        seen: false,
+        time: "방금",
+        monoText: "단톡방이 시끄럽다. 다들 지안이한테 화가 단단히 났나보다.",
+        messages: [
+          { separator: "오늘" },
+
+          { text: "지안아 너 진짜 뭐야",                                                       sender: "이서준", user: this.users["이서준"] },
+          { text: "?",                                                                          sender: "최지안", user: this.users["최지안"] },
+          { text: "왱",                                                                         sender: "최지안", user: this.users["최지안"] },
+          { text: "이틀 전에는 오곡동이더니 어제는 문래동, 오늘은 삼성동까지 갔다왔네ㅋㅋ",     sender: "강하은", user: this.users["강하은"] },
+
+          // 주인공 발언
+          { text: "너가 사람이냐" },
+          { text: "어떻게 친구가 죽었는데 그래" },
+
+          { text: "나만 힘든거야 지금?",                                                         sender: "이서준", user: this.users["이서준"] },
+
+          // 주인공 발언
+          { text: "최소한 스토리에는 티내지 마라" },
+          { text: "보기 거북하다" },
+
+          { text: "부산 갔다온 것부터 화났는데 이건 아니지",                                    sender: "이서준", user: this.users["이서준"] },
+          { text: "미안해 내가 생각이 짧았어 맛집에 정신이 팔려서 ..",                          sender: "최지안", user: this.users["최지안"] },
+          { text: "스토리는 내리는 게 좋을듯",                                                   sender: "강하은", user: this.users["강하은"] },
+          // ※ 원문엔 "정수아(?)" 였으나 자기 스토리를 내리는 사람은 최지안이라 최지안으로 처리
+          { text: "응..! 내릴게",                                                                sender: "최지안", user: this.users["최지안"] }
+        ]
+      });
+
       dailyChats.push({
         name: "박서아", user: this.users["박서아"], avatarColor: [255, 180, 100], active: true, unread: true, seen: false, time: "방금",
         monoText: "서아다. 엄청 다급해 보이는데...",
