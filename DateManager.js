@@ -105,66 +105,95 @@ class DateManager {
       dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "부산에서 20대 여성, 숨진 채 발견", 328, color(20), news1));
       dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "배우 한서윤, 새 로맨스 영화 주연 확정", 42, color(20), news4));
 
-      // 채팅 (monoText 속성으로 진입 시 독백 설정)
+      // 채팅
       dailyChats.push({
-        name: "엄마", user: this.users["엄마"], avatarColor: [180, 110, 110], active: false, unread: true, seen: false, time: "방금",
-        monoText: "엄마한테서 온 연락이다... 뭐라고 답장해야 할까.",
-        messages: [{ text: "밥은 챙겨 먹고 다니니?", sent: false }]
+        name: "last.frame_", user: this.users["부계"], avatarColor: [120, 90, 200], active: false, unread: true, seen: false, time: "오늘",
+        messages: [
+          { separator: "오늘" },
+          { text: "ㅋㅋㅋ", sent: false }
+        ]
       });
+
       dailyChats.push({
-  name: "여행 멤버들",
-  isGroup: true,
+        name: "부산 여행",
+        isGroup: true,
+        users: [
+          this.users["박서아"],
+          this.users["최지안"],
+          this.users["정수아"],
+          this.users["이서준"],
+          this.users["강하은"]
+        ],
+        memberNames: ["박서아", "최지안", "정수아", "이서준", "강하은"],
+        active: false,
+        unread: true,
+        seen: false,
+        time: "어제",
+        messages: [
+          { separator: "어제" },
+          { text: "얘들아 미안해 ㅠㅠ 진짜진짜 급한 일이 있다고 부모님이 불러서 바로 집에 가봐야할 것 같아 ㅠㅠ", sender: "박서아", user: this.users["박서아"] },
+          { text: "???", sender: "이서준", user: this.users["이서준"] },
+          { text: "무슨일인데?", sender: "최지안", user: this.users["최지안"] },
+          { text: "너 짐은 어떻게 해?", sender: "최지안", user: this.users["최지안"] },
 
-  // 단체방 프로필에 합쳐서 보일 유저들
-  users: [
-    this.users["박서아"],
-    this.users["최지안"],
-    this.users["정수아"],
-    this.users["이서준"]
-  ],
+          { separator: "어제" },
+          { text: "혹시 서아랑 연락 되는 사람 없어?", sender: "이서준", user: this.users["이서준"] },
+          { text: "어제 이후로 계속 연락을 안받아...", sender: "이서준", user: this.users["이서준"] },
+          { text: "원래 서아 연락 잘 안보지 않아?", sender: "강하은", user: this.users["강하은"] },
+          { text: "급한 일 있으면 하루 정도는 자주 안보긴 하는데... 불안해서...", sender: "이서준", user: this.users["이서준"] },
+          { text: "혹시 저녁에 살인사건 기사 뜬 거 봤어?", sender: "최지안", user: this.users["최지안"] },
+          { text: "이거 서아 아니겠지?", sender: "최지안", user: this.users["최지안"] },
+          { text: "설마", sender: "이서준", user: this.users["이서준"] },
+          { text: "수아야 너 서아 부모님 연락처 알지", sender: "이서준", user: this.users["이서준"] },
+          { text: "ㅂ빨리 ㅇ연락드려봐", sender: "이서준", user: this.users["이서준"] },
+          { text: "방금 서아 부모님께 연락 드렸는데... 맞대", sender: "정수아", user: this.users["정수아"] }
+        ]
+      });
 
-  // 상단에 몇 명인지 표시하거나, 이름을 직접 쓰고 싶을 때 사용
-  memberNames: ["박서아", "최지안", "정수아", "이서준"],
+      dailyChats.push({
+        name: "지안이 깜짝생파 준비",
+        isGroup: true,
+        users: [
+          this.users["박서아"],
+          this.users["정수아"],
+          this.users["이서준"],
+          this.users["강하은"]
+        ],
+        memberNames: ["박서아", "정수아", "이서준", "강하은"],
+        active: false,
+        unread: false,
+        seen: true,
+        time: "어제",
+        messages: [
+          { separator: "어제" },
+          { text: "그러면 각자 흩어져서 준비한대로 ㄱㄱ", sender: "이서준", user: this.users["이서준"] },
+          { text: "6시에 시작하면 되는거지 ???" },
+          { text: "ㅇㅇㅇ", sender: "이서준", user: this.users["이서준"] },
+          { text: "아니 서아 얘는 어디갔어", sender: "이서준", user: this.users["이서준"] }
+        ]
+      });
 
-  active: false,
-  unread: true,
-  seen: false,
-  time: "방금",
-  monoText: "단체 채팅방에 오랜만에 메시지가 올라왔다.",
+      dailyChats.push({
+        name: "최지안", user: this.users["최지안"], avatarColor: [90, 180, 180], active: false, unread: false, seen: true, time: "4일전",
+        messages: [
+          { separator: "4일전" },
+          { text: "야 너가 그 때 알려준 거 뭐였지?", sent: false },
+          { text: "ㄱㄷ 내가 정리해놓은거 보내줄게", sent: true },
+          { text: "게시물을 확인할 수 없습니다", sent: true }
+        ]
+      });
 
-  messages: [
-    { separator: "오늘" },
+      dailyChats.push({
+        name: "강하은", user: this.users["강하은"], avatarColor: [100, 100, 255], active: false, unread: false, seen: true, time: "5일전",
+        messages: [
+          { separator: "5일전" },
+          { text: "저번에 말했던 건 좀 괜찮아?", sent: false },
+          { text: "요즘은 좀 덜한거같은데... 여행 간 동안은 안그러겠지 ???", sent: true },
+          { text: "괜찮아", sent: false },
+          { text: "혹시 무슨 일 있으면 내가 막아줄게", sent: false }
+        ]
+      });
 
-    {
-      text: "다들 뉴스 봤어?",
-      sender: "최지안",
-      user: this.users["최지안"]
-    },
-
-    {
-      text: "봤어. 그 장소 맞는 것 같던데...",
-      sender: "정수아",
-      user: this.users["정수아"]
-    },
-
-    {
-      text: "잠깐만, 그럼 서아가 올린 스토리랑 이어지는 거 아니야?",
-      sender: "이서준",
-      user: this.users["이서준"]
-    },
-
-    // user/sender가 없으므로 플레이어 쪽 채팅
-    {
-      text: "나도 다시 확인해볼게."
-    },
-
-    {
-      text: "빨리 확인해줘. 뭔가 이상해.",
-      sender: "박서아",
-      user: this.users["박서아"]
-    }
-  ]
-});
     } 
     // ================= [ 2일차 ] =================
     else if (this.currentDay === 2) {
@@ -184,26 +213,103 @@ class DateManager {
       this.unlockedFeatures.chat = true;
 
       dailyChats.push({
-        name: "의문의_X", user: this.users["의문의_X"], avatarColor: [120, 90, 200], active: true, activeText: "활동 중", unread: true, seen: false, time: "1분",
-        monoText: "모르는 사람한테서 온 디엠... 누구지?",
+        name: "last.frame_", user: this.users["부계"], avatarColor: [120, 90, 200], active: false, unread: true, seen: false, time: "오늘",
         messages: [
-          { text: "자니?", sent: false },
-          { text: "네가 올린 스토리 봤어", sent: false },
+          { separator: "어제" },
+          { text: "ㅋㅋㅋ", sent: false },
+          { text: "너 누구야", sent: true },
+
+          { separator: "오늘" },
+          { text: "곧 알게될 걸 ???", sent: false }
         ]
       });
+
       dailyChats.push({
-        name: "이서준", user: this.users["이서준"], avatarColor: [70, 140, 230], active: true, unread: true, seen: false, time: "12분",
-        monoText: "내일 약속... 까먹을 뻔했네.",
+        name: "강하은", user: this.users["강하은"], avatarColor: [100, 100, 255], active: false, unread: true, seen: false, time: "오늘",
         messages: [
-          { text: "내일 약속 그대로지?", sent: false },
-          { text: "ㅇㅇ 7시 강남역", sent: true },
-          { text: "오케이 늦지마ㅋㅋ", sent: false },
+          { separator: "5일전" },
+          { text: "저번에 말했던 건 좀 괜찮아?", sent: false },
+          { text: "요즘은 좀 덜한거같은데... 여행 간 동안은 안그러겠지 ???", sent: true },
+          { text: "괜찮아", sent: false },
+          { text: "혹시 무슨 일 있으면 내가 막아줄게", sent: false },
+
+          { separator: "오늘" },
+          { text: "서아 죽고 나서 점점 심해지는거같아...", sent: true },
+          { text: "한동안 안그러다가 서아 죽은날부터 3일째 자꾸 기절해", sent: true },
+          { text: "우리 신부님이 도움 주실 수 있을거야", sent: false },
+          { text: "그 전까지는 나가지 말고 있어", sent: false }
         ]
       });
+
       dailyChats.push({
-        name: "엄마", user: this.users["엄마"], avatarColor: [180, 110, 110], active: false, unread: false, seen: true, time: "어제",
-        messages: [{ text: "밥은 챙겨 먹고 다니니?", sent: false }, { text: "네 잘 먹고 있어요", sent: true }]
+        name: "부산 여행",
+        isGroup: true,
+        users: [
+          this.users["박서아"],
+          this.users["최지안"],
+          this.users["정수아"],
+          this.users["이서준"],
+          this.users["강하은"]
+        ],
+        memberNames: ["박서아", "최지안", "정수아", "이서준", "강하은"],
+        active: false,
+        unread: false,
+        seen: true,
+        time: "어제",
+        messages: [
+          { separator: "2일 전" },
+          { text: "얘들아 미안해 ㅠㅠ 진짜진짜 급한 일이 있다고 부모님이 불러서 바로 집에 가봐야할 것 같아 ㅠㅠ", sender: "박서아", user: this.users["박서아"] },
+          { text: "???", sender: "이서준", user: this.users["이서준"] },
+          { text: "무슨일인데?", sender: "최지안", user: this.users["최지안"] },
+          { text: "너 짐은 어떻게 해?", sender: "최지안", user: this.users["최지안"] },
+
+          { separator: "어제" },
+          { text: "혹시 서아랑 연락 되는 사람 없어?", sender: "이서준", user: this.users["이서준"] },
+          { text: "어제 이후로 계속 연락을 안받아...", sender: "이서준", user: this.users["이서준"] },
+          { text: "원래 서아 연락 잘 안보지 않아?", sender: "강하은", user: this.users["강하은"] },
+          { text: "급한 일 있으면 하루 정도는 자주 안보긴 하는데... 불안해서...", sender: "이서준", user: this.users["이서준"] },
+          { text: "혹시 저녁에 살인사건 기사 뜬 거 봤어?", sender: "최지안", user: this.users["최지안"] },
+          { text: "이거 서아 아니겠지?", sender: "최지안", user: this.users["최지안"] },
+          { text: "설마", sender: "이서준", user: this.users["이서준"] },
+          { text: "수아야 너 서아 부모님 연락처 알지", sender: "이서준", user: this.users["이서준"] },
+          { text: "ㅂ빨리 ㅇ연락드려봐", sender: "이서준", user: this.users["이서준"] },
+          { text: "방금 서아 부모님께 연락 드렸는데... 맞대", sender: "정수아", user: this.users["정수아"] }
+        ]
       });
+
+      dailyChats.push({
+        name: "지안이 깜짝생파 준비",
+        isGroup: true,
+        users: [
+          this.users["박서아"],
+          this.users["정수아"],
+          this.users["이서준"],
+          this.users["강하은"]
+        ],
+        memberNames: ["박서아", "정수아", "이서준", "강하은"],
+        active: false,
+        unread: false,
+        seen: true,
+        time: "2일전",
+        messages: [
+          { separator: "2일전" },
+          { text: "그러면 각자 흩어져서 준비한대로 ㄱㄱ", sender: "이서준", user: this.users["이서준"] },
+          { text: "6시에 시작하면 되는거지 ???" },
+          { text: "ㅇㅇㅇ", sender: "이서준", user: this.users["이서준"] },
+          { text: "아니 서아 얘는 어디갔어", sender: "이서준", user: this.users["이서준"] }
+        ]
+      });
+
+      dailyChats.push({
+        name: "최지안", user: this.users["최지안"], avatarColor: [90, 180, 180], active: false, unread: false, seen: true, time: "4일전",
+        messages: [
+          { separator: "4일전" },
+          { text: "야 너가 그 때 알려준 거 뭐였지?", sent: false },
+          { text: "ㄱㄷ 내가 정리해놓은거 보내줄게", sent: true },
+          { text: "게시물을 확인할 수 없습니다", sent: true }
+        ]
+      });
+
     }
     // ================= [ 3일차 ] =================
     else if (this.currentDay === 3) {
@@ -219,16 +325,134 @@ class DateManager {
       dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "영화 블루 아크 개봉 첫 주 예매 1위! \n@야 나랑 이거 볼래?", 254, color(20), news7));
       
       dailyChats.push({
-        name: "박서아", user: this.users["박서아"], avatarColor: [255, 180, 100], active: true, unread: true, seen: false, time: "방금",
-        monoText: "서아다. 엄청 다급해 보이는데...",
-        messages: [{ text: "야 빨리 내 스토리 좀 확인해봐!!", sent: false }, { text: "뉴스에 나온 곳 거기 맞지!?", sent: false }]
+        name: "강하은", user: this.users["강하은"], avatarColor: [100, 100, 255], active: false, unread: true, seen: false, time: "오늘",
+        messages: [
+          { separator: "6일전" },
+          { text: "저번에 말했던 건 좀 괜찮아?", sent: false },
+          { text: "요즘은 좀 덜한거같은데... 여행 간 동안은 안그러겠지 ???", sent: true },
+          { text: "괜찮아", sent: false },
+          { text: "혹시 무슨 일 있으면 내가 막아줄게", sent: false },
+
+          { separator: "어제" },
+          { text: "서아 죽고 나서 점점 심해지는거같아...", sent: true },
+          { text: "한동안 안그러다가 서아 죽은날부터 3일 연속으로 기절해.", sent: true },
+          { text: "우리 신부님이 도움 주실 수 있을거야", sent: false },
+          { text: "그 전까지는 나가지 말고 있어", sent: false },
+
+          { separator: "오늘" },
+          { text: "오늘은 좀 어때", sent: false },
+          { text: "아직까진 아무 일도 없어.", sent: true },
+          { text: "신부님이 자세한 증상 설명해 달라는데", sent: false }
+        ]
       });
+
       dailyChats.push({
-        name: "의문의_X", user: this.users["의문의_X"], avatarColor: [120, 90, 200], active: true, unread: false, seen: true, time: "어제",
-        messages: [{ text: "곧 알게 될 거야 🙂", sent: false }]
+        name: "최지안", user: this.users["최지안"], avatarColor: [90, 180, 180], active: false, unread: true, seen: false, time: "오늘",
+        monoText: "내가 언제 이런걸 친거지? 정말로 기억이 없다...",
+        messages: [
+          { separator: "5일전" },
+          { text: "야 너가 그 때 알려준 거 뭐였지?", sent: false },
+          { text: "ㄱㄷ 내가 정리해놓은거 보내줄게", sent: true },
+          { text: "게시물을 확인할 수 없습니다", sent: true },
+
+          { separator: "오늘" },
+          { text: "아니", sent: false },
+          { text: "맛집은 너가 알려준 거잖아", sent: false },
+          { text: "서준이한테 뭐라고 해봐", sent: false },
+          { text: "뭔소리야", sent: true },
+          { text: "내가 언제", sent: true },
+          { text: "???", sent: false },
+          { text: "위에 채팅 내용 남아있잖아;;", sent: false }
+        ]
       });
+
+      dailyChats.push({
+        name: "부산 여행",
+        isGroup: true,
+        users: [
+          this.users["박서아"],
+          this.users["최지안"],
+          this.users["정수아"],
+          this.users["이서준"],
+          this.users["강하은"]
+        ],
+        memberNames: ["박서아", "최지안", "정수아", "이서준", "강하은"],
+        active: false,
+        unread: true,
+        seen: false,
+        time: "오늘",
+        messages: [
+          { separator: "3일 전" },
+          { text: "얘들아 미안해 ㅠㅠ 진짜진짜 급한 일이 있다고 부모님이 불러서 바로 집에 가봐야할 것 같아 ㅠㅠ", sender: "박서아", user: this.users["박서아"] },
+          { text: "???", sender: "이서준", user: this.users["이서준"] },
+          { text: "무슨일인데?", sender: "최지안", user: this.users["최지안"] },
+          { text: "너 짐은 어떻게 해?", sender: "최지안", user: this.users["최지안"] },
+
+          { separator: "2일 전" },
+          { text: "혹시 서아랑 연락 되는 사람 없어?", sender: "이서준", user: this.users["이서준"] },
+          { text: "어제 이후로 계속 연락을 안받아...", sender: "이서준", user: this.users["이서준"] },
+          { text: "원래 서아 연락 잘 안보지 않아?", sender: "강하은", user: this.users["강하은"] },
+          { text: "급한 일 있으면 하루 정도는 자주 안보긴 하는데... 불안해서...", sender: "이서준", user: this.users["이서준"] },
+          { text: "혹시 저녁에 살인사건 기사 뜬 거 봤어?", sender: "최지안", user: this.users["최지안"] },
+          { text: "이거 서아 아니겠지?", sender: "최지안", user: this.users["최지안"] },
+          { text: "설마", sender: "이서준", user: this.users["이서준"] },
+          { text: "수아야 너 서아 부모님 연락처 알지", sender: "이서준", user: this.users["이서준"] },
+          { text: "ㅂ빨리 ㅇ연락드려봐", sender: "이서준", user: this.users["이서준"] },
+          { text: "방금 서아 부모님께 연락 드렸는데... 맞대", sender: "정수아", user: this.users["정수아"] },
+
+          { separator: "오늘" },
+          { text: "서준이 너", sender: "최지안", user: this.users["최지안"] },
+          { text: "스토리 우리 보라고 올린거야?", sender: "최지안", user: this.users["최지안"] },
+          { text: "ㅇ", sender: "이서준", user: this.users["이서준"] },
+          { text: "이렇게 공개적으로 하는건 아니지 않아?", sender: "최지안", user: this.users["최지안"] },
+          { text: "서아가 그렇게 된지 얼마나 됐다고", sender: "이서준", user: this.users["이서준"] },
+          { text: "보란듯이 놀러다는걸 올려?", sender: "이서준", user: this.users["이서준"] },
+          { text: "연쇄살인 기사도 봤지?", sender: "이서준", user: this.users["이서준"] },
+          { text: "너가 간 동네, 다 거기 나오던데?", sender: "이서준", user: this.users["이서준"] },
+          { text: "나 진짜 이상한 생각도 들어.", sender: "이서준", user: this.users["이서준"] },
+          { text: "서준아. 진정해", sender: "강하은", user: this.users["강하은"] },
+          { text: "서아도 너가 이러길 원하지 않을거야.", sender: "강하은", user: this.users["강하은"] },
+          { text: "내일 서아 가는 길인데 편하게 보내줘야지.", sender: "강하은", user: this.users["강하은"] }
+        ]
+      });
+
+      dailyChats.push({
+        name: "last.frame_", user: this.users["부계"], avatarColor: [120, 90, 200], active: false, unread: false, seen: true, time: "어제",
+        messages: [
+          { separator: "3일전" },
+          { text: "ㅋㅋㅋ", sent: false },
+          { text: "너 누구야", sent: true },
+
+          { separator: "어제" },
+          { text: "곧 알게될 걸 ???", sent: false }
+        ]
+      });
+
+      dailyChats.push({
+        name: "지안이 깜짝생파 준비",
+        isGroup: true,
+        users: [
+          this.users["박서아"],
+          this.users["정수아"],
+          this.users["이서준"],
+          this.users["강하은"]
+        ],
+        memberNames: ["박서아", "정수아", "이서준", "강하은"],
+        active: false,
+        unread: false,
+        seen: true,
+        time: "3일전",
+        messages: [
+          { separator: "3일전" },
+          { text: "그러면 각자 흩어져서 준비한대로 ㄱㄱ", sender: "이서준", user: this.users["이서준"] },
+          { text: "6시에 시작하면 되는거지 ???" },
+          { text: "ㅇㅇㅇ", sender: "이서준", user: this.users["이서준"] },
+          { text: "아니 서아 얘는 어디갔어", sender: "이서준", user: this.users["이서준"] }
+        ]
+      });
+
     }
-    // ================= [ 4일차 ] =================
+        // ================= [ 4일차 ] =================
     else if (this.currentDay === 4) {
       dailyStories.push(new Story(this.users["강하은"], haeun4));
       dailyStories.push(new Story(this.users["최지안"], jian4_1));
@@ -244,13 +468,167 @@ class DateManager {
       dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "국가대표 축구팀 극적 역전승, 8강 진출 미쳤다...", 739, color(20), news9));
 
       dailyChats.push({
-        name: "강하은", user: this.users["강하은"], avatarColor: [100, 100, 255], active: false, unread: true, seen: false, time: "5분 전",
-        monoText: "경찰...? 나한테 왜 연락을 한 거지?",
-        messages: [{ text: "최근 그 폐건물 근처에 간 적 있으십니까?", sent: false }, { text: "연락 확인하시면 바로 답장 바랍니다.", sent: false }]
+        name: "부산 여행",
+        isGroup: true,
+        users: [
+          this.users["박서아"],
+          this.users["최지안"],
+          this.users["정수아"],
+          this.users["이서준"],
+          this.users["강하은"]
+        ],
+        memberNames: ["박서아", "최지안", "정수아", "이서준", "강하은"],
+        active: false,
+        unread: false,
+        seen: true,
+        time: "오늘",
+        messages: [
+          { separator: "5일 전" },
+          { text: "얘들아 미안해 ㅠㅠ 진짜진짜 급한 일이 있다고 부모님이 불러서 바로 집에 가봐야할 것 같아 ㅠㅠ", sender: "박서아", user: this.users["박서아"] },
+          { text: "???", sender: "이서준", user: this.users["이서준"] },
+          { text: "무슨일인데?", sender: "최지안", user: this.users["최지안"] },
+          { text: "너 짐은 어떻게 해?", sender: "최지안", user: this.users["최지안"] },
+
+          { separator: "3일 전" },
+          { text: "혹시 서아랑 연락 되는 사람 없어?", sender: "이서준", user: this.users["이서준"] },
+          { text: "어제 이후로 계속 연락을 안받아...", sender: "이서준", user: this.users["이서준"] },
+          { text: "원래 서아 연락 잘 안보지 않아?", sender: "강하은", user: this.users["강하은"] },
+          { text: "급한 일 있으면 하루 정도는 자주 안보긴 하는데... 불안해서...", sender: "이서준", user: this.users["이서준"] },
+          { text: "혹시 저녁에 살인사건 기사 뜬 거 봤어?", sender: "최지안", user: this.users["최지안"] },
+          { text: "이거 서아 아니겠지?", sender: "최지안", user: this.users["최지안"] },
+          { text: "설마", sender: "이서준", user: this.users["이서준"] },
+          { text: "수아야 너 서아 부모님 연락처 알지", sender: "이서준", user: this.users["이서준"] },
+          { text: "ㅂ빨리 ㅇ연락드려봐", sender: "이서준", user: this.users["이서준"] },
+          { text: "방금 서아 부모님께 연락 드렸는데... 맞대", sender: "정수아", user: this.users["정수아"] },
+
+          { separator: "어제" },
+          { text: "서준이 너", sender: "최지안", user: this.users["최지안"] },
+          { text: "스토리 우리 보라고 올린거야?", sender: "최지안", user: this.users["최지안"] },
+          { text: "ㅇ", sender: "이서준", user: this.users["이서준"] },
+          { text: "이렇게 공개적으로 하는건 아니지 않아?", sender: "최지안", user: this.users["최지안"] },
+          { text: "서아가 그렇게 된지 얼마나 됐다고", sender: "이서준", user: this.users["이서준"] },
+          { text: "보란듯이 놀러다는걸 올려?", sender: "이서준", user: this.users["이서준"] },
+          { text: "연쇄살인 기사도 봤지?", sender: "이서준", user: this.users["이서준"] },
+          { text: "너가 간 동네, 다 거기 나오던데?", sender: "이서준", user: this.users["이서준"] },
+          { text: "나 진짜 이상한 생각 들어", sender: "이서준", user: this.users["이서준"] },
+          { text: "서준아. 진정해", sender: "강하은", user: this.users["강하은"] },
+          { text: "서아도 너가 이러길 원하지 않을거야.", sender: "강하은", user: this.users["강하은"] },
+          { text: "내일 서아 가는 길인데 편하게 보내줘야지.", sender: "강하은", user: this.users["강하은"] },
+
+          { separator: "오늘" }
+        ]
       });
+
       dailyChats.push({
-        name: "박서아", user: this.users["박서아"], avatarColor: [255, 180, 100], active: true, unread: true, seen: false, time: "2시간 전",
-        messages: [{ text: "전화 왜 안 받아!!!", sent: false }]
+        name: "정수아",
+        user: this.users["정수아"],
+        avatarColor: [255, 140, 180],
+        active: false,
+        unread: false,
+        seen: true,
+        time: "오늘",
+        messages: [
+          { separator: "오늘" },
+          { text: "나도 에어팟을 사야하나...", sent: true },
+          { text: "너 부산 갔을 때 쓰던 줄 이어폰 있지 않아?", sent: false },
+          { text: "깜짝파티 준비하다가 잃어버렸나봐... 어디갔는지를 모르겠어", sent: true }
+        ]
+      });
+
+      dailyChats.push({
+        name: "last.frame_",
+        user: this.users["부계"],
+        avatarColor: [120, 90, 200],
+        active: false,
+        unread: false,
+        seen: true,
+        time: "어제",
+        messages: [
+          { separator: "4일전" },
+          { text: "ㅋㅋㅋ", sent: false },
+          { text: "너 누구야", sent: true },
+
+          { separator: "어제" },
+          { text: "곧 알게될 걸 ???", sent: false }
+        ]
+      });
+
+      dailyChats.push({
+        name: "강하은",
+        user: this.users["강하은"],
+        avatarColor: [100, 100, 255],
+        active: false,
+        unread: true,
+        seen: false,
+        time: "어제",
+        messages: [
+          { separator: "일주일전" },
+          { text: "저번에 말했던 건 좀 괜찮아?", sent: false },
+          { text: "요즘은 좀 덜한거같은데... 여행 간 동안은 안그러겠지 ???", sent: true },
+          { text: "괜찮아", sent: false },
+          { text: "혹시 무슨 일 있으면 내가 막아줄게", sent: false },
+
+          { separator: "2일전" },
+          { text: "서아 죽고 나서 점점 심해지는거같아...", sent: true },
+          { text: "한동안 안그러다가 서아 죽은날부터 3일 연속으로 기절해.", sent: true },
+          { text: "우리 신부님이 도움 주실 수 있을거야", sent: false },
+          { text: "그 전까지는 나가지 말고 있어", sent: false },
+
+          { separator: "어제" },
+          { text: "오늘은 좀 어때", sent: false },
+          { text: "아직까진 아무 일도 없어.", sent: true },
+          { text: "신부님이 자세한 증상 설명해 달라는데", sent: false },
+          { text: "한번에 한 두시간? 정도 기절하고.", sent: true },
+          { text: "기절할 때랑 다른 장소에서 깨어나는 것 같아.", sent: true },
+          { text: "악령이 들린거 아니야?", sent: false }
+        ]
+      });
+
+      dailyChats.push({
+        name: "최지안",
+        user: this.users["최지안"],
+        avatarColor: [90, 180, 180],
+        active: false,
+        unread: false,
+        seen: true,
+        time: "어제",
+        messages: [
+          { separator: "6일전" },
+          { text: "야 너가 그 때 알려준 거 뭐였지?", sent: false },
+          { text: "ㄱㄷ 내가 정리해놓은거 보내줄게", sent: true },
+          { text: "게시물을 확인할 수 없습니다", sent: true },
+
+          { separator: "어제" },
+          { text: "아니", sent: false },
+          { text: "맛집은 너가 알려준 거잖아", sent: false },
+          { text: "서준이한테 뭐라고 해봐", sent: false },
+          { text: "서준이도 많이 힘들어서 그럴거야", sent: true },
+          { text: "어쩔수 없어", sent: true },
+          { text: "장례식 가서 위로나 해주자", sent: true }
+        ]
+      });
+
+      dailyChats.push({
+        name: "지안이 깜짝생파 준비",
+        isGroup: true,
+        users: [
+          this.users["박서아"],
+          this.users["정수아"],
+          this.users["이서준"],
+          this.users["강하은"]
+        ],
+        memberNames: ["박서아", "정수아", "이서준", "강하은"],
+        active: false,
+        unread: false,
+        seen: true,
+        time: "5일전",
+        messages: [
+          { separator: "5일전" },
+          { text: "그러면 각자 흩어져서 준비한대로 ㄱㄱ", sender: "이서준", user: this.users["이서준"] },
+          { text: "6시에 시작하면 되는거지 ???" },
+          { text: "ㅇㅇㅇ", sender: "이서준", user: this.users["이서준"] },
+          { text: "아니 서아 얘는 어디갔어", sender: "이서준", user: this.users["이서준"] }
+        ]
       });
     }
     // ================= [ 5일차 ] =================
@@ -278,7 +656,61 @@ class DateManager {
       dailyStories.push(new Story(this.users["최지안"], color(255), "밤에 혼자 골목길 돌아다니지 마!"));
       
       dailyPosts.push(new Post(this.users["SYSTEM"], "VOID", "루프가 초기화되었습니다. 기억을 잃지 마세요.", 0, color(0)));
-      dailyChats = []; 
+      dailyChats.push({
+        name: "박서아", user: this.users["박서아"], avatarColor: [255, 180, 100], active: false, unread: true, seen: false, time: "오늘",
+        messages: [
+          { separator: "오늘" },
+          { text: "서아야. 나 좀만 도와줘", sent: true },
+          { text: "이게 잘 안되는데 너가 제일 가까움 ㅠㅠ", sent: true },
+          { text: "엉!", sent: false },
+          { text: "어딘데?", sent: false },
+          { text: "(영상보기)", sent: true }
+        ]
+      });
+
+      dailyChats.push({
+        name: "지안이 깜짝생파 준비",
+        isGroup: true,
+        users: [
+          this.users["박서아"],
+          this.users["정수아"],
+          this.users["이서준"],
+          this.users["강하은"]
+        ],
+        memberNames: ["박서아", "정수아", "이서준", "강하은"],
+        active: false,
+        unread: false,
+        seen: true,
+        time: "오늘",
+        messages: [
+          { separator: "오늘" },
+          { text: "그러면 각자 흩어져서 준비한대로 ㄱㄱ", sender: "이서준", user: this.users["이서준"] },
+          { text: "6시에 시작하면 되는거지 ???" },
+          { text: "ㅇㅇㅇ", sender: "이서준", user: this.users["이서준"] },
+          { text: "아니 서아 얘는 어디갔어", sender: "이서준", user: this.users["이서준"] }
+        ]
+      });
+
+      dailyChats.push({
+        name: "최지안", user: this.users["최지안"], avatarColor: [90, 180, 180], active: false, unread: false, seen: true, time: "3일전",
+        messages: [
+          { separator: "3일전" },
+          { text: "야 너가 그 때 알려준 거 뭐였지?", sent: false },
+          { text: "ㄱㄷ 내가 정리해놓은거 보내줄게", sent: true },
+          { text: "게시물을 확인할 수 없습니다", sent: true }
+        ]
+      });
+
+      dailyChats.push({
+        name: "강하은", user: this.users["강하은"], avatarColor: [100, 100, 255], active: false, unread: false, seen: true, time: "4일전",
+        messages: [
+          { separator: "4일전" },
+          { text: "저번에 말했던 건 좀 괜찮아?", sent: false },
+          { text: "요즘은 좀 덜한거같은데... 여행 간 동안은 안그러겠지 ???", sent: true },
+          { text: "괜찮아", sent: false },
+          { text: "혹시 무슨 일 있으면 내가 막아줄게", sent: false }
+        ]
+      });
     }
 
     // 데이터 전달 (채팅은 instagramDM.js 쪽으로 넘김)
