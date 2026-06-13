@@ -18,6 +18,7 @@ let endingVideoPlaying = false;
 let gameState = "START";
 let roomBgImg;
 let instagramStarted = false;
+let showResetConfirm = false;
 
 let imgProfileMain, imgProfileFriend, imgProfileNpc, imgProfileRival, imgProfileNews;
 let imgProfileAlba, imgProfileCop, imgProfileX, imgProfileShop, imgProfileSystem;
@@ -236,14 +237,52 @@ function draw() {
     monologue.update();
 
     // Reset 버튼
-    fill(60);
-    noStroke();
-    rect(30, height - 60, 80, 35, 8);
-    fill(255);
-    textAlign(CENTER, CENTER);
-    textSize(14);
-    textStyle(NORMAL);
-    text("Reset", 70, height - 43);
+fill(60);
+noStroke();
+rect(30, height - 60, 80, 35, 8);
+fill(255);
+textAlign(CENTER, CENTER);
+textSize(14);
+textStyle(NORMAL);
+text("Reset", 70, height - 43);
+
+// 팝업창
+if (showResetConfirm) {
+  // 어두운 배경
+  fill(0, 0, 0, 160);
+  noStroke();
+  rect(0, 0, width, height);
+
+  // 팝업 박스
+  fill(40);
+  stroke(80);
+  strokeWeight(1);
+  rect(width/2 - 130, height/2 - 70, 260, 140, 12);
+
+  // 텍스트
+  fill(255);
+  noStroke();
+  textAlign(CENTER, CENTER);
+  textSize(16);
+  textStyle(BOLD);
+  text("정말 리셋하시겠습니까?", width/2, height/2 - 30);
+
+  // Yes 버튼
+  fill(200, 40, 60);
+  noStroke();
+  rect(width/2 - 110, height/2 + 10, 100, 38, 8);
+  fill(255);
+  textSize(15);
+  textStyle(NORMAL);
+  text("Yes", width/2 - 60, height/2 + 29);
+
+  // No 버튼
+  fill(70);
+  noStroke();
+  rect(width/2 + 10, height/2 + 10, 100, 38, 8);
+  fill(255);
+  text("No", width/2 + 60, height/2 + 29);
+}
 
     monologue.display();
   }
@@ -324,19 +363,35 @@ if (gameState === "START") {
 
 function mousePressed() {
 
-    // Reset 버튼 클릭
-  if (
-    mouseX > 30 && mouseX < 110 &&
-    mouseY > height - 60 && mouseY < height - 25
-  ) {
+  // 팝업 중일 때
+if (showResetConfirm) {
+  // Yes
+  if (mouseX > width/2 - 110 && mouseX < width/2 - 10 &&
+      mouseY > height/2 + 10 && mouseY < height/2 + 48) {
+    showResetConfirm = false;
     gameState = "START";
     instagramStarted = false;
     dateManager = new DateManager();
     dateManager.loadDailyData();
     phone = new PhoneUI();
     monologue = new MonologueSystem();
-    return;
   }
+  // No
+  if (mouseX > width/2 + 10 && mouseX < width/2 + 110 &&
+      mouseY > height/2 + 10 && mouseY < height/2 + 48) {
+    showResetConfirm = false;
+  }
+  return;
+}
+
+// Reset 버튼 클릭
+if (
+  mouseX > 30 && mouseX < 110 &&
+  mouseY > height - 60 && mouseY < height - 25
+) {
+  showResetConfirm = true;
+  return;
+}
 
   if (gameState === "START") {
     if (
