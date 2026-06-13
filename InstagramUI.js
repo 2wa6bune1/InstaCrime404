@@ -673,6 +673,18 @@ class InstagramUI {
     g.endShape(CLOSE);
     g.pop();
 
+    // X 버튼 (우측 상단)
+    let closeX = this.w - 22;
+    let closeY = 48;
+    let closeSize = 10;
+    g.push();
+    g.stroke(255);
+    g.strokeWeight(2.5);
+    g.strokeCap(ROUND);
+    g.line(closeX - closeSize, closeY - closeSize, closeX + closeSize, closeY + closeSize);
+    g.line(closeX + closeSize, closeY - closeSize, closeX - closeSize, closeY + closeSize);
+    g.pop();
+
     g.strokeWeight(1);
   }
 
@@ -718,7 +730,7 @@ handleClick(mx, my) {
       this.checkStoryClick(mx, contentY);
       this.checkLikeClick(mx, contentY);
     } else if (this.currentScreen === "story") {
-      if (mx > this.w - 50 && my < 80) {
+      if (mx > this.w - 50 && my > 25 && my < 70) {
         this.currentScreen = "feed";
         this.storyElapsedTime = 0;
       }
