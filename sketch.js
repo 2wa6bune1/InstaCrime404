@@ -234,6 +234,17 @@ function draw() {
     }
 
     monologue.update();
+
+    // Reset 버튼
+    fill(60);
+    noStroke();
+    rect(30, height - 60, 80, 35, 8);
+    fill(255);
+    textAlign(CENTER, CENTER);
+    textSize(14);
+    textStyle(NORMAL);
+    text("Reset", 70, height - 43);
+
     monologue.display();
   }
 }
@@ -312,6 +323,21 @@ if (gameState === "START") {
 }
 
 function mousePressed() {
+
+    // Reset 버튼 클릭
+  if (
+    mouseX > 30 && mouseX < 110 &&
+    mouseY > height - 60 && mouseY < height - 25
+  ) {
+    gameState = "START";
+    instagramStarted = false;
+    dateManager = new DateManager();
+    dateManager.loadDailyData();
+    phone = new PhoneUI();
+    monologue = new MonologueSystem();
+    return;
+  }
+
   if (gameState === "START") {
     if (
       mouseX > width / 2 - 100 &&
