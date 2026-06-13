@@ -372,9 +372,10 @@ if (showResetConfirm) {
     gameState = "START";
     instagramStarted = false;
     dateManager = new DateManager();
-    dateManager.loadDailyData();
     phone = new PhoneUI();
     monologue = new MonologueSystem();
+    storyUploader = new StoryUploader(phone.instagram);
+    dateManager.loadDailyData();
   }
   // No
   if (mouseX > width/2 + 10 && mouseX < width/2 + 110 &&
