@@ -16,6 +16,8 @@ let endingVideo;
 let endingVideoPlaying = false;
 
 let gameState = "START";
+let roomBgImg;
+let instagramStarted = false;
 
 let imgProfileMain, imgProfileFriend, imgProfileNpc, imgProfileRival, imgProfileNews;
 let imgProfileAlba, imgProfileCop, imgProfileX, imgProfileShop, imgProfileSystem;
@@ -28,6 +30,8 @@ let sooah1, sooah3, sooah4, accountX0, accountX1, accountX2, accountX3, accountX
 function preload() {
   bgmManager = new BgmManager();
   bgmManager.preload();
+
+  roomBgImg = loadImage("assets/roomBg.png");
 
   imgProfileNews = loadImage("assets/NewsProfile.png");
   imgProfileX = loadImage("assets/imgProfileX.png");
@@ -93,7 +97,7 @@ function setup() {
   createCanvas(900, 800);
   textFont("Arial");
 
-  room = new Room();
+  room = new Room(roomBgImg);
   dateManager = new DateManager();
   phone = new PhoneUI();
   monologue = new MonologueSystem();
@@ -120,6 +124,33 @@ function setup() {
   }
 
   storyUploader = new StoryUploader(phone.instagram);
+}
+
+function areAllCluesChecked() {
+  let currentStories = phone && phone.instagram
+    ? phone.instagram.stories
+    : [];
+
+  let currentChats = phone && phone.instagram && phone.instagram.dm
+    ? phone.instagram.dm.chatRooms
+    : [];
+
+  let allStoriesRead =
+    currentStories.length === 0 ||
+    currentStories.every(s => s.isRead);
+
+  let allChatsRead =
+    currentChats.length === 0 ||
+    currentChats.every(c => !c.unread);
+
+  return allStoriesRead && allChatsRead;
+}
+
+function mouseWheel(event) {
+  if (gameState === "PLAY") {
+    phone.handleMouseWheel(event);
+  }
+  return false;
 }
 
 function draw() {
@@ -158,31 +189,22 @@ function draw() {
     textStyle(NORMAL);
     text("게임 시작하기", width / 2, height / 2 + 10);
   } else {
-    let currentStories = (phone && phone.instagram) ? phone.instagram.stories : [];
-    let currentChats = (phone && phone.instagram && phone.instagram.dm) ? phone.instagram.dm.chatRooms : [];
-
-    let allStoriesRead = currentStories.length === 0 || currentStories.every(s => s.isRead);
-    let allChatsRead = currentChats.length === 0 || currentChats.every(c => !c.unread);
-
-    if (allStoriesRead && allChatsRead) {
-      if (!dateManager.endMonologuePlayed[dateManager.currentDay] && phone.instagram.currentScreen === "feed") {
-        let endText = dateManager.getEndMonologue(dateManager.currentDay);
-
-        if (endText) {
-          monologue.start(endText);
-        }
-
-        dateManager.endMonologuePlayed[dateManager.currentDay] = true;
-      } else if (dateManager.endMonologuePlayed[dateManager.currentDay] && !monologue.active) {
-        room.goNextDay = true;
-      } else {
-        room.goNextDay = false;
-      }
+    // 1일차 시작 전만 방 배경 표시
+    if (!instagramStarted && dateManager.currentDay === 1) {
+      room.display();
     } else {
-      room.goNextDay = false;
+      // 핸드폰 클릭 후부터는 계속 검정 배경
+      background(0);
+
+      fill(255, 200);
+      textAlign(LEFT, TOP);
+      textSize(36);
+      textStyle(BOLD);
+
+      let dayText = dateManager.currentDay === 0 ? "Day 0" : `Day ${dateManager.currentDay}`;
+      text(dayText, 30, 30);
     }
 
-    room.display();
     phone.update();
 
     if (phone.instagram.currentScreen === "profile") {
@@ -197,7 +219,8 @@ function draw() {
 
     phone.display();
 
-    if (!phone.expanded) {
+    // 인스타그램 시작 후부터 오른쪽 하단 버튼 계속 표시
+    if (instagramStarted) {
       if (
         dateManager &&
         dateManager.currentDay === 5 &&
@@ -205,7 +228,7 @@ function draw() {
         !endingVideoPlaying
       ) {
         room.displayEndingButton();
-      } else if (!(dateManager && dateManager.currentDay === 5)) {
+      } else {
         room.displayNextDayButton();
       }
     }
@@ -213,6 +236,79 @@ function draw() {
     monologue.update();
     monologue.display();
   }
+}
+
+if (gameState === "START") {
+  background(20);
+  fill(255);
+  textAlign(CENTER, CENTER);
+  textSize(40);
+  textStyle(BOLD);
+  text("MYSTERY GAME", width / 2, height / 3 - 30);
+
+  fill(200, 40, 60);
+  noStroke();
+  rect(width / 2 - 100, height / 2 - 20, 200, 60, 15);
+
+  fill(255);
+  textSize(24);
+  textStyle(NORMAL);
+  text("게임 시작하기", width / 2, height / 2 + 10);
+} else {
+  let currentStories = (phone && phone.instagram) ? phone.instagram.stories : [];
+  let currentChats = (phone && phone.instagram && phone.instagram.dm) ? phone.instagram.dm.chatRooms : [];
+
+  let allStoriesRead = currentStories.length === 0 || currentStories.every(s => s.isRead);
+  let allChatsRead = currentChats.length === 0 || currentChats.every(c => !c.unread);
+
+  if (allStoriesRead && allChatsRead) {
+    if (!dateManager.endMonologuePlayed[dateManager.currentDay] && phone.instagram.currentScreen === "feed") {
+      let endText = dateManager.getEndMonologue(dateManager.currentDay);
+
+      if (endText) {
+        monologue.start(endText);
+      }
+
+      dateManager.endMonologuePlayed[dateManager.currentDay] = true;
+    } else if (dateManager.endMonologuePlayed[dateManager.currentDay] && !monologue.active) {
+      room.goNextDay = true;
+    } else {
+      room.goNextDay = false;
+    }
+  } else {
+    room.goNextDay = false;
+  }
+
+  room.display();
+  phone.update();
+
+  if (phone.instagram.currentScreen === "profile") {
+    clueHighlight.displayIcon(false);
+  }
+
+  if (phone.instagram.backupStories && phone.instagram.currentScreen !== "story") {
+    phone.instagram.stories = phone.instagram.backupStories;
+    phone.instagram.backupStories = null;
+    phone.instagram.currentScreen = "feed";
+  }
+
+  phone.display();
+
+  if (!phone.expanded) {
+    if (
+      dateManager &&
+      dateManager.currentDay === 5 &&
+      dateManager.day5EndingReady &&
+      !endingVideoPlaying
+    ) {
+      room.displayEndingButton();
+    } else if (!(dateManager && dateManager.currentDay === 5)) {
+      room.displayNextDayButton();
+    }
+  }
+
+  monologue.update();
+  monologue.display();
 }
 
 function mousePressed() {
@@ -238,37 +334,11 @@ function mousePressed() {
     return;
   }
 
-  let phoneClicked = phone.handleMousePressed();
-
-  if (!phoneClicked) {
-    if (phone.expanded) {
-      phone.minimize();
-    } else {
-      if (typeof room.checkClick === "function") {
-        room.checkClick(mouseX, mouseY);
-      }
-    }
-  }
-}
-
-function mouseWheel(event) {
-  if (gameState === "PLAY") {
-    phone.handleMouseWheel(event);
-  }
-  return false;
-}
-
-function startEndingVideo() {
-  endingVideoPlaying = true;
-  endingVideo.time(0);
-  endingVideo.play();
-
-  if (phone && phone.instagram) {
-    phone.instagram.currentScreen = "endingVideo";
+  // 다음날 버튼 / 엔딩 버튼을 핸드폰보다 먼저 처리
+  if (typeof room.checkClick === "function") {
+    let roomClicked = room.checkClick(mouseX, mouseY);
+    if (roomClicked) return;
   }
 
-  if (dateManager) {
-    dateManager.day5EndingReady = false;
-    dateManager.day5SequenceFinished = true;
-  }
+  phone.handleMousePressed();
 }
