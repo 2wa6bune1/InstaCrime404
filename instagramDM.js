@@ -181,7 +181,6 @@ openChatRoom(index) {
       if (mx > this.ui.w - 72) {
         let t = this.chatInputText.trim();
         if (t.length) this.sendMessage(t);
-        else this.sendMessage("❤️");
       }
     }
   }
