@@ -18,9 +18,9 @@ class StoryUploader {
     this.mainHandBurstStarted = false;
     this.mainHandBurstStartFrame = 0;
 
-    // 4일차 ; 2초 뒤 손자국 시작, 시작 후 3초 뒤 종료
+    // 4일차 ; 2초 뒤 손자국 시작, 시작 후 6초 뒤 종료 (느리게)
     this.mainCameraVisibleFrames = 120; // 2초
-    this.mainHandBurstFrames = 180;     // 3초
+    this.mainHandBurstFrames = 360;     // 6초 (이전 3초 → 6초)
 
     // 귀신 연출 길이
     this.ghostEffectDuration = 240;
@@ -832,22 +832,30 @@ class StoryUploader {
     this.resultType = "false";
   }
 
-  let storyImg = this.createTaggedStoryImage();
-
-  this.instagramUI.addMyStory(storyImg);
+  // 💡 정답("main")을 맞췄을 때만 저격 스토리를 만들고 피드에 추가.
+  //    오답이면 피드에 아예 올라가지 않음.
+  let storyImg = null;
+  if (this.resultType === "true") {
+    storyImg = this.createTaggedStoryImage();
+    this.instagramUI.addMyStory(storyImg);
+  }
 
   if (typeof dateManager !== "undefined") {
-    dateManager.uploadedToday = true;
+    // uploadedToday 는 "실제로 저격 스토리가 피드에 올라간 날"만 true
+    dateManager.uploadedToday = (this.resultType === "true");
     dateManager.accusedSuspect = this.selectedTarget;
     dateManager.accuseResult = this.resultType;
     dateManager.taggedTarget = this.selectedTarget;
     dateManager.taggedHandle = this.getTargetById(this.selectedTarget).handle;
     dateManager.storyUploadResult = this.resultType;
 
-    if (!dateManager.uploadedStories) {
-      dateManager.uploadedStories = {};
+    // uploadedStories 도 정답으로 실제 스토리가 올라간 경우에만 기록
+    if (storyImg) {
+      if (!dateManager.uploadedStories) {
+        dateManager.uploadedStories = {};
+      }
+      dateManager.uploadedStories[dateManager.currentDay] = storyImg;
     }
-    dateManager.uploadedStories[dateManager.currentDay] = storyImg;
   }
 
   // main을 골랐을 때만 카메라 연출로 전환
@@ -946,12 +954,37 @@ displayMainCameraScreen(appMouse) {
 
   background(0);
 
-  // 카메라 화면
+  // 카메라 화면 (webcam 본래 비율 유지하면서 화면 가득 = cover behavior)
+  // 이전엔 image(webcam, 0, 0, w, h) 라서 세로로 늘어났음. 이제 비율 유지.
   if (typeof webcam !== "undefined" && webcam) {
+    let camW = w;
+    let camH = h;
+    let camX = 0;
+    let camY = 0;
+
+    if (webcam.width && webcam.height) {
+      let camAspect = webcam.width / webcam.height;
+      let screenAspect = w / h;
+      if (camAspect > screenAspect) {
+        // 카메라가 더 가로로 김 → 높이 맞추고 좌우 잘림
+        camH = h;
+        camW = h * camAspect;
+        camX = (w - camW) / 2;
+        camY = 0;
+      } else {
+        // 카메라가 더 세로로 김 → 너비 맞추고 상하 잘림
+        camW = w;
+        camH = w / camAspect;
+        camX = 0;
+        camY = (h - camH) / 2;
+      }
+    }
+
     push();
-    translate(w, 0);
+    // 좌우 거울 반전 + 위치 보정
+    translate(w - camX, camY);
     scale(-1, 1);
-    image(webcam, 0, 0, w, h);
+    image(webcam, 0, 0, camW, camH);
     pop();
   }
 
@@ -967,8 +1000,8 @@ displayMainCameraScreen(appMouse) {
   if (this.mainHandBurstStarted) {
     this.displayBloodHandBurst(w, h);
 
-    // 손자국 시작 후 3초 지나면 자동 종료
-    if (frameCount - this.mainHandBurstStartFrame >= 180) {
+    // 손자국 시작 후 6초(360프레임) 지나면 자동 종료
+    if (frameCount - this.mainHandBurstStartFrame >= this.mainHandBurstFrames) {
       this.closeMainCamera();
     }
   }
@@ -978,8 +1011,10 @@ displayBloodHandBurst(w, h) {
   if (typeof day5HandImg === "undefined" || !day5HandImg) return;
 
   let elapsed = frameCount - this.mainHandBurstStartFrame;
-  let progress = constrain(elapsed / 180, 0, 1);
-  let count = floor(lerp(12, 35, progress));
+  // 6초에 걸쳐 점진적 증가
+  let progress = constrain(elapsed / this.mainHandBurstFrames, 0, 1);
+  // 큰 손자국이라 너무 빽빽하면 답답해서 개수는 8 → 24 정도로
+  let count = floor(lerp(8, 24, progress));
 
   push();
   imageMode(CENTER);
@@ -987,7 +1022,8 @@ displayBloodHandBurst(w, h) {
   for (let i = 0; i < count; i++) {
     let x = random(-30, w + 30);
     let y = random(-30, h + 30);
-    let s = random(w * 0.18, w * 0.45);
+    // 💡 더 크게: 이전 0.18~0.45 → 0.4~0.8 (약 2배)
+    let s = random(w * 0.4, w * 0.8);
     let a = random(140, 255);
 
     push();
