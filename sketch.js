@@ -9,6 +9,10 @@ let clueHighlight;
 let monologue; // 독백 시스템 변수 추가
 let bgmManager; // bgm관리자
 
+let introVideo;
+let introVideoPlaying = false;
+let introVideoWatched = false; // 도입부 영상 
+
 let webcam; // StoryUploader의 mainCamera 연출에서 사용
 let day5HandImg;
 
@@ -31,6 +35,9 @@ let sooah1, sooah3, sooah4, accountX0, accountX1, accountX2, accountX3, accountX
 function preload() {
   bgmManager = new BgmManager();
   bgmManager.preload();
+
+  introVideo = createVideo("assets/intro.mp4");
+  introVideo.hide();
 
   roomBgImg = loadImage("assets/roomBg.png");
 
@@ -155,6 +162,24 @@ function mouseWheel(event) {
 }
 
 function draw() {
+  if (introVideoPlaying) {
+    background(0);
+    image(introVideo, 0, 0, width, height);
+
+    if (introVideo.elt.ended) {
+      introVideoPlaying = false;
+      introVideoWatched = true;
+
+      introVideo.stop();
+      introVideo.time(0);
+
+      gameState = "START";
+    }
+
+    return;
+  }
+
+
   if (endingVideoPlaying) {
     image(endingVideo, 0, 0, width, height);
 
@@ -395,21 +420,32 @@ if (
 }
 
   if (gameState === "START") {
-    if (
-      mouseX > width / 2 - 100 &&
-      mouseX < width / 2 + 100 &&
-      mouseY > height / 2 - 20 &&
-      mouseY < height / 2 + 40
-    ) {
-      userStartAudio();
-      gameState = "PLAY";
+  if (
+    mouseX > width / 2 - 100 &&
+    mouseX < width / 2 + 100 &&
+    mouseY > height / 2 - 20 &&
+    mouseY < height / 2 + 40
+  ) {
 
-      if (bgmManager) {
-        bgmManager.playForDay(dateManager.currentDay);
-      }
+    userStartAudio();
+
+    // 첫 클릭 → 영상 재생
+    if (!introVideoWatched) {
+      introVideoPlaying = true;
+      introVideo.play();
+      return;
     }
-    return;
+
+    // 두 번째 클릭 → 실제 게임 시작
+    gameState = "PLAY";
+
+    if (bgmManager) {
+      bgmManager.playForDay(dateManager.currentDay);
+    }
   }
+
+  return;
+}
 
   if (monologue.active) {
     monologue.checkClick();
