@@ -719,6 +719,11 @@ class StoryUploader {
   // ======================================================
   handleClick(mx, my) {
   if (this.mode === "mainCamera") {
+    // 💡 우측 상단 ✕ 버튼 클릭 → 카메라 종료
+    let w = this.instagramUI.w;
+    if (dist(mx, my, w - 30, 32) < 22) {
+      this.closeMainCamera();
+    }
     return;
   }
 
@@ -1005,6 +1010,37 @@ displayMainCameraScreen(appMouse) {
       this.closeMainCamera();
     }
   }
+
+  // 💡 우측 상단 닫기(✕) 버튼 — 손자국 위에서도 잘 보이게 항상 마지막에 그림
+  this.drawMainCameraCloseButton(w, appMouse);
+}
+
+// 메인 카메라 우측 상단 닫기(✕) 버튼
+drawMainCameraCloseButton(w, appMouse) {
+  let cx = w - 30;
+  let cy = 32;
+  let r = 22;
+
+  let isHover = appMouse && dist(appMouse.x, appMouse.y, cx, cy) < r;
+
+  push();
+  translate(cx, cy);
+  if (isHover) scale(1.12);
+
+  // 어두운 반투명 원 배경 (손자국 위에서도 잘 보이게)
+  noStroke();
+  fill(0, 160);
+  circle(0, 0, r * 2);
+
+  // ✕ 표시
+  stroke(isHover ? color(255, 110, 110) : 255);
+  strokeWeight(2.4);
+  strokeCap(ROUND);
+  let s = 8;
+  line(-s, -s, s, s);
+  line(-s, s, s, -s);
+
+  pop();
 }
 
 displayBloodHandBurst(w, h) {
