@@ -15,6 +15,13 @@ class InstagramDM {
     this._chatDragDist = 0;
     this._chatDragMode = null;
     this.chatRooms = [];
+
+    // DM 상단 계정명 클릭 시 열리는 인스타그램식 계정 전환 시트
+    this.accountSwitcherOpen = false;
+
+    // 부계정 진입 시 잠깐 보여줄 비밀번호 입력창 상태
+    this.passwordPromptOpen = false;
+    this.closePasswordPromptWhenMonoEnds = false;
   }
 
   loadChatData(chatData) {
@@ -37,6 +44,17 @@ class InstagramDM {
         monologue.start(currentChat.monoText);
         currentChat.monoPlayed = true;
       }
+    }
+
+    if (
+      this.passwordPromptOpen &&
+      this.closePasswordPromptWhenMonoEnds &&
+      typeof monologue !== "undefined" &&
+      !monologue.active
+    ) {
+      this.passwordPromptOpen = false;
+      this.closePasswordPromptWhenMonoEnds = false;
+      this.ui.currentScreen = "dmList";
     }
 
     this.chatCursorBlink += deltaTime;
@@ -73,34 +91,24 @@ class InstagramDM {
     return n;
   }
 
-  room() { 
-    return this.chatRooms[this.currentChatRoom]; 
+  room() {
+    return this.chatRooms[this.currentChatRoom];
   }
 
-room() { 
-  return this.chatRooms[this.currentChatRoom]; 
-}
-
-openDMList() {
-  this.ui.currentScreen = "dmList";
-  this.dmTargetScrollY = 0;
-  this.dmScrollY = 0;
-}
-
-openChatRoom(index) {
-  this.currentChatRoom = index;
-  let room = this.chatRooms[index];
-  room.unread = false; 
-  this.ui.currentScreen = "chatRoom";
-  this.chatInputText = "";
-  this.chatTargetScrollY = this.getChatMaxScroll();
-  this.chatScrollY = this.chatTargetScrollY;
-}
+  openDMList() {
+    this.accountSwitcherOpen = false;
+    this.passwordPromptOpen = false;
+    this.closePasswordPromptWhenMonoEnds = false;
+    this.ui.currentScreen = "dmList";
+    this.dmTargetScrollY = 0;
+    this.dmScrollY = 0;
+  }
 
   openChatRoom(index) {
+    this.accountSwitcherOpen = false;
     this.currentChatRoom = index;
     let room = this.chatRooms[index];
-    room.unread = false; 
+    room.unread = false;
     this.ui.currentScreen = "chatRoom";
     this.chatInputText = "";
     this.chatTargetScrollY = this.getChatMaxScroll();
@@ -163,7 +171,26 @@ openChatRoom(index) {
   }
 
   handleDMListClick(mx, my) {
-    if (mx < 52 && my < 60) { this.ui.currentScreen = "feed"; return; } 
+    if (this.passwordPromptOpen) return;
+
+    if (mx < 52 && my < 60) {
+      this.accountSwitcherOpen = false;
+      this.ui.currentScreen = "feed";
+      return;
+    }
+
+    // DM 상단 계정명/화살표 클릭: 인스타그램식 계정 전환 시트를 먼저 엽니다.
+    if (this.isAccountNameClicked(mx, my)) {
+      this.accountSwitcherOpen = !this.accountSwitcherOpen;
+      return;
+    }
+
+    if (this.accountSwitcherOpen) {
+      if (this.handleAccountSwitcherClick(mx, my)) return;
+      this.accountSwitcherOpen = false;
+      return;
+    }
+
     if (this._chatDragDist > 6) return;
 
     let listTop = 112, itemH = 72;
@@ -469,7 +496,10 @@ openChatRoom(index) {
     line(6, -8, -4, 0); line(-4, 0, 6, 8);
     pop();
 
-    let myName = this.ui.currentAccount === "main" ? "주인공" : "의문의_X";
+    let myName =
+      (this.ui && typeof this.ui.getCurrentAccountName === "function")
+        ? this.ui.getCurrentAccountName()
+        : (this.ui.currentAccount === "main" ? "주인공" : "last.frame_");
     noStroke(); fill(255);
     textAlign(LEFT, CENTER); textStyle(BOLD); textSize(19);
     text(myName, 50, 30);
@@ -495,6 +525,266 @@ openChatRoom(index) {
     text("검색", 50, 82);
 
     stroke(45); strokeWeight(1); line(0, 112, w, 112);
+
+    this.drawAccountSwitcher(appMouse);
+    this.drawPasswordPrompt(appMouse);
+  }
+
+  getDisplayedAccountName() {
+    if (this.ui && typeof this.ui.getCurrentAccountName === "function") {
+      return this.ui.getCurrentAccountName();
+    }
+    return this.ui.currentAccount === "main" ? "주인공" : "last.frame_";
+  }
+
+  getPlayerAccountName() {
+    if (this.ui && typeof this.ui.getPlayerAccountName === "function") {
+      return this.ui.getPlayerAccountName();
+    }
+    return "주인공";
+  }
+
+  getSubAccountName() {
+    if (this.ui && typeof this.ui.getSubAccountName === "function") {
+      return this.ui.getSubAccountName();
+    }
+    return "last.frame_";
+  }
+
+  isAccountNameClicked(mx, my) {
+    if (my < 8 || my > 54 || mx < 48) return false;
+
+    push();
+    textSize(19);
+    textStyle(BOLD);
+    let nameW = textWidth(this.getDisplayedAccountName());
+    pop();
+
+    return mx <= 50 + nameW + 40;
+  }
+
+  getAccountSwitcherLayout() {
+    let sheetH = 258;
+    return {
+      x: 0,
+      y: this.ui.h - sheetH,
+      w: this.ui.w,
+      h: sheetH,
+      rowH: 64
+    };
+  }
+
+  handleAccountSwitcherClick(mx, my) {
+    let layout = this.getAccountSwitcherLayout();
+
+    // 시트 바깥을 누르면 닫기
+    if (mx < layout.x || mx > layout.x + layout.w || my < layout.y || my > layout.y + layout.h) {
+      return false;
+    }
+
+    let firstRowY = layout.y + 72;
+    let secondRowY = firstRowY + layout.rowH;
+
+    if (my >= firstRowY && my < firstRowY + layout.rowH) {
+      this.ui.currentAccount = "main";
+      this.accountSwitcherOpen = false;
+      return true;
+    }
+
+    if (my >= secondRowY && my < secondRowY + layout.rowH) {
+      this.openSubAccountPasswordPrompt();
+      return true;
+    }
+
+    return true;
+  }
+
+  getPlayerAccountUser() {
+    if (typeof dateManager !== "undefined" && dateManager && dateManager.users) {
+      return dateManager.users["주인공"] || null;
+    }
+    return null;
+  }
+
+  getSubAccountUser() {
+    if (typeof dateManager !== "undefined" && dateManager && dateManager.users) {
+      return dateManager.users["부계"] || dateManager.users["의문의_X"] || null;
+    }
+    return null;
+  }
+
+  openSubAccountPasswordPrompt() {
+    this.accountSwitcherOpen = false;
+    this.passwordPromptOpen = true;
+    this.closePasswordPromptWhenMonoEnds = true;
+    this.ui.currentAccount = "main";
+    this.ui.currentScreen = "dmList";
+
+    if (typeof monologue !== "undefined" && monologue) {
+      monologue.start("비밀번호가 뭐지...? 아니 무엇보다 이 계정이 왜 내 폰에 로그인 되어있는거야?");
+    }
+  }
+
+  drawAccountSwitcher(appMouse) {
+    if (!this.accountSwitcherOpen) return;
+
+    let layout = this.getAccountSwitcherLayout();
+
+    noStroke();
+    fill(0, 125);
+    rect(0, 0, this.ui.w, this.ui.h);
+
+    fill(24);
+    rect(layout.x, layout.y, layout.w, layout.h, 26, 26, 0, 0);
+
+    noStroke();
+    fill(95);
+    rect(this.ui.w / 2 - 22, layout.y + 12, 44, 4, 3);
+
+    fill(255);
+    textAlign(CENTER, BASELINE);
+    textStyle(BOLD);
+    textSize(17);
+    text("계정 전환", this.ui.w / 2, layout.y + 43);
+
+    stroke(45);
+    strokeWeight(1);
+    line(0, layout.y + 60, this.ui.w, layout.y + 60);
+
+    this.drawAccountSwitcherRow(
+      layout.x,
+      layout.y + 72,
+      layout.w,
+      layout.rowH,
+      this.getPlayerAccountName(),
+      "현재 계정",
+      this.getPlayerAccountUser(),
+      this.ui.currentAccount === "main",
+      appMouse
+    );
+
+    this.drawAccountSwitcherRow(
+      layout.x,
+      layout.y + 72 + layout.rowH,
+      layout.w,
+      layout.rowH,
+      this.getSubAccountName(),
+      "부계정",
+      this.getSubAccountUser(),
+      false,
+      appMouse
+    );
+
+    stroke(45);
+    strokeWeight(1);
+    line(18, layout.y + 72 + layout.rowH * 2 + 8, this.ui.w - 18, layout.y + 72 + layout.rowH * 2 + 8);
+
+    fill(70, 130, 255);
+    noStroke();
+    textAlign(CENTER, BASELINE);
+    textStyle(BOLD);
+    textSize(14);
+    text("기존 계정으로 로그인", this.ui.w / 2, layout.y + layout.h - 32);
+
+    textStyle(NORMAL);
+  }
+
+  drawAccountSwitcherRow(x, y, w, h, title, subtitle, user, selected, appMouse) {
+    let hover = appMouse && appMouse.x >= x && appMouse.x <= x + w && appMouse.y >= y && appMouse.y <= y + h;
+
+    if (hover) {
+      noStroke();
+      fill(255, 13);
+      rect(x + 10, y + 4, w - 20, h - 8, 14);
+    }
+
+    let profileX = x + 42;
+    let profileY = y + h / 2;
+
+    if (user && typeof user.displayProfile === "function") {
+      user.displayProfile(profileX, profileY, 42);
+    } else {
+      noStroke();
+      fill(55);
+      circle(profileX, profileY, 42);
+      fill(95);
+      circle(profileX, profileY, 34);
+    }
+
+    fill(255);
+    noStroke();
+    textAlign(LEFT, BASELINE);
+    textStyle(BOLD);
+    textSize(14);
+    text(title, x + 74, y + 29);
+
+    fill(150);
+    textStyle(NORMAL);
+    textSize(12);
+    text(subtitle, x + 74, y + 47);
+
+    if (selected) {
+      noFill();
+      stroke(70, 130, 255);
+      strokeWeight(2.2);
+      circle(x + w - 34, profileY, 22);
+      noStroke();
+      fill(70, 130, 255);
+      textAlign(CENTER, CENTER);
+      textStyle(BOLD);
+      textSize(13);
+      text("✓", x + w - 34, profileY);
+    }
+
+    textStyle(NORMAL);
+  }
+
+  drawPasswordPrompt(appMouse) {
+    if (!this.passwordPromptOpen) return;
+
+    const w = this.ui.w;
+    const h = this.ui.h;
+    let boxW = 300;
+    let boxH = 190;
+    let boxX = (w - boxW) / 2;
+    let boxY = 185;
+
+    noStroke();
+    fill(0, 165);
+    rect(0, 0, w, h);
+
+    fill(32);
+    stroke(90);
+    strokeWeight(1);
+    rect(boxX, boxY, boxW, boxH, 18);
+
+    noStroke();
+    fill(255);
+    textAlign(CENTER, BASELINE);
+    textStyle(BOLD);
+    textSize(18);
+    text("비밀번호 입력", w / 2, boxY + 42);
+
+    fill(165);
+    textStyle(NORMAL);
+    textSize(12);
+    text("@" + this.getSubAccountName(), w / 2, boxY + 66);
+
+    fill(20);
+    stroke(80);
+    strokeWeight(1);
+    rect(boxX + 28, boxY + 88, boxW - 56, 44, 12);
+
+    noStroke();
+    fill(120);
+    textAlign(LEFT, CENTER);
+    textSize(13);
+    text("비밀번호", boxX + 44, boxY + 110);
+
+    fill(170);
+    textAlign(CENTER, BASELINE);
+    textSize(11);
+    text("로그인이 중단되었습니다", w / 2, boxY + 160);
   }
 
   drawDMRoom(room, y, itemH, appMouse) {
@@ -911,5 +1201,32 @@ openChatRoom(index) {
       text("♡", w - 32, py + ph / 2);
     }
     textStyle(NORMAL);
+  }
+
+  handleKeyPressed(k, code) {
+    if (this.ui.currentScreen !== "chatRoom") return false;
+
+    if (code === BACKSPACE) {
+      this.chatInputText = this.chatInputText.slice(0, -1);
+      return true;
+    }
+
+    if (code === ENTER) {
+      let t = this.chatInputText.trim();
+      if (t.length) this.sendMessage(t);
+      return true;
+    }
+
+    return false;
+  }
+
+  handleKeyTyped(k) {
+    if (this.ui.currentScreen !== "chatRoom") return false;
+    if (!k || k.length !== 1) return false;
+    if (k.charCodeAt(0) < 32) return false;
+    if (this.chatInputText.length >= 120) return true;
+
+    this.chatInputText += k;
+    return true;
   }
 }

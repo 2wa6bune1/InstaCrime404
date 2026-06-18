@@ -6,14 +6,14 @@ let dateManager;
 let room;
 let storyUploader;
 let clueHighlight;
-let monologue; // 독백 시스템 변수 추가
-let bgmManager; // bgm관리자
+let monologue;
+let bgmManager;
 
 let introVideo;
 let introVideoPlaying = false;
-let introVideoWatched = false; // 도입부 영상 
+let introVideoWatched = false;
 
-let webcam; // StoryUploader의 mainCamera 연출에서 사용
+let webcam;
 let day5HandImg;
 
 let endingVideo;
@@ -23,6 +23,30 @@ let gameState = "START";
 let roomBgImg;
 let instagramStarted = false;
 let showResetConfirm = false;
+
+let playerInstagramId = "";
+let idInputText = "";
+let idInputFocused = true;
+let idInputError = "";
+const INSTAGRAM_ID_MAX_LENGTH = 10;
+
+// 날짜 전환 영상은 아래 객체에 실제 파일 경로가 정의된 날짜에만 재생됩니다.
+// 기본값은 비어 있으므로, 정의된 영상이 없으면 DAY 전환 화면이 나오지 않습니다.
+// 예시:
+// const DAY_TRANSITION_VIDEO_PATHS = {
+//   1: "assets/day1.mp4",
+//   2: "assets/day2.mp4",
+//   3: "assets/day3.mp4",
+//   4: "assets/day4.mp4",
+//   5: "assets/day5.mp4",
+//   0: "assets/day0.mp4"
+// };
+const DAY_TRANSITION_VIDEO_PATHS = {};
+
+let dayTransitionVideos = {};
+let dayTransitionVideoLoadFailed = {};
+let dayTransitionActive = false;
+let currentDayTransitionVideo = null;
 
 let imgProfileMain, imgProfileFriend, imgProfileNpc, imgProfileRival, imgProfileNews;
 let imgProfileAlba, imgProfileCop, imgProfileX, imgProfileShop, imgProfileSystem;
@@ -38,6 +62,8 @@ function preload() {
 
   introVideo = createVideo("assets/intro.mp4");
   introVideo.hide();
+
+  preloadDayTransitionVideos();
 
   roomBgImg = loadImage("assets/roomBg.png");
 
@@ -101,16 +127,49 @@ function preload() {
   accountX5 = loadImage("assets/X5.JPG");
 }
 
+function preloadDayTransitionVideos() {
+  dayTransitionVideos = {};
+  dayTransitionVideoLoadFailed = {};
+
+  for (let dayKey in DAY_TRANSITION_VIDEO_PATHS) {
+    let videoPath = DAY_TRANSITION_VIDEO_PATHS[dayKey];
+
+    if (!videoPath || String(videoPath).trim() === "") {
+      continue;
+    }
+
+    let video = createVideo(videoPath);
+    video.hide();
+
+    video.elt.onerror = function () {
+      dayTransitionVideoLoadFailed[dayKey] = true;
+      delete dayTransitionVideos[dayKey];
+
+      if (currentDayTransitionVideo === video) {
+        dayTransitionActive = false;
+        currentDayTransitionVideo = null;
+      }
+    };
+
+    dayTransitionVideos[dayKey] = video;
+  }
+}
+
+function getDayTransitionVideo(day) {
+  let dayKey = String(day);
+
+  if (dayTransitionVideoLoadFailed[dayKey]) {
+    return null;
+  }
+
+  return dayTransitionVideos[dayKey] || null;
+}
+
 function setup() {
   createCanvas(900, 800);
   textFont("Arial");
 
-  room = new Room(roomBgImg);
-  dateManager = new DateManager();
-  phone = new PhoneUI();
-  monologue = new MonologueSystem();
-
-  dateManager.loadDailyData();
+  initializeGameObjects();
 
   // StoryUploader의 mainCamera 연출에서 사용
   webcam = createCapture(VIDEO);
@@ -123,15 +182,49 @@ function setup() {
 
   endingVideo = createVideo("assets/endingVideoTest.mp4");
   endingVideo.hide();
+}
+
+function initializeGameObjects() {
+  room = new Room(roomBgImg);
+  dateManager = new DateManager();
+  phone = new PhoneUI();
+  monologue = new MonologueSystem();
+
+  applyPlayerInstagramId();
+  dateManager.loadDailyData();
 
   clueHighlight = new Highlight("결정적 증거", 200, 150);
-
   let dummyUser = dateManager.users["단짝_친구"];
   if (dummyUser) {
     clueHighlight.addHightlight(new Story(dummyUser, color(0), color(0), color(0), "하이라이트 테스트"));
   }
 
   storyUploader = new StoryUploader(phone.instagram);
+}
+
+function sanitizeInstagramId(value) {
+  return String(value || "")
+    .replace(/[^A-Za-z0-9_.]/g, "")
+    .slice(0, INSTAGRAM_ID_MAX_LENGTH);
+}
+
+function isValidInstagramId(value) {
+  return /^[A-Za-z0-9_.]{1,10}$/.test(String(value || ""));
+}
+
+function getPlayerInstagramId() {
+  return playerInstagramId || "주인공";
+}
+
+function applyPlayerInstagramId() {
+  let cleanId = sanitizeInstagramId(playerInstagramId);
+  if (!cleanId) cleanId = "주인공";
+
+  if (dateManager && typeof dateManager.setPlayerInstagramId === "function") {
+    dateManager.setPlayerInstagramId(cleanId);
+  } else if (dateManager && dateManager.users && dateManager.users["주인공"]) {
+    dateManager.users["주인공"].name = cleanId;
+  }
 }
 
 function areAllCluesChecked() {
@@ -155,7 +248,7 @@ function areAllCluesChecked() {
 }
 
 function mouseWheel(event) {
-  if (gameState === "PLAY") {
+  if (gameState === "PLAY" && !dayTransitionActive) {
     phone.handleMouseWheel(event);
   }
   return false;
@@ -163,8 +256,7 @@ function mouseWheel(event) {
 
 function draw() {
   if (introVideoPlaying) {
-    background(0);
-    image(introVideo, 0, 0, width, height);
+    drawFullScreenVideo(introVideo);
 
     if (introVideo.elt.ended) {
       introVideoPlaying = false;
@@ -174,14 +266,14 @@ function draw() {
       introVideo.time(0);
 
       gameState = "START";
+      idInputFocused = true;
     }
 
     return;
   }
 
-
   if (endingVideoPlaying) {
-    image(endingVideo, 0, 0, width, height);
+    drawFullScreenVideo(endingVideo);
 
     if (endingVideo.elt.ended) {
       endingVideoPlaying = false;
@@ -198,123 +290,37 @@ function draw() {
     return;
   }
 
+  if (dayTransitionActive) {
+    drawDayTransitionVideo();
+    return;
+  }
+
   if (gameState === "START") {
-    background(20);
-    fill(255);
-    textAlign(CENTER, CENTER);
-    textSize(40);
-    textStyle(BOLD);
-    text("MYSTERY GAME", width / 2, height / 3 - 30);
+    drawStartScreen();
+    return;
+  }
 
-    fill(200, 40, 60);
-    noStroke();
-    rect(width / 2 - 100, height / 2 - 20, 200, 60, 15);
-
-    fill(255);
-    textSize(24);
-    textStyle(NORMAL);
-    text("게임 시작하기", width / 2, height / 2 + 10);
-  } else {
-    // 1일차 시작 전만 방 배경 표시
-    if (!instagramStarted && dateManager.currentDay === 1) {
-      room.display();
-    } else {
-      // 핸드폰 클릭 후부터는 계속 검정 배경
-      background(0);
-
-      fill(255, 200);
-      textAlign(LEFT, TOP);
-      textSize(36);
-      textStyle(BOLD);
-
-      let dayText = dateManager.currentDay === 0 ? "Day 0" : `Day ${dateManager.currentDay}`;
-      text(dayText, 30, 30);
-    }
-
-    phone.update();
-
-    if (phone.instagram.currentScreen === "profile") {
-      clueHighlight.displayIcon(false);
-    }
-
-    if (phone.instagram.backupStories && phone.instagram.currentScreen !== "story") {
-      phone.instagram.stories = phone.instagram.backupStories;
-      phone.instagram.backupStories = null;
-      phone.instagram.currentScreen = "feed";
-    }
-
-    phone.display();
-
-    // 인스타그램 시작 후부터 오른쪽 하단 버튼 계속 표시
-    if (instagramStarted) {
-      if (
-        dateManager &&
-        dateManager.currentDay === 5 &&
-        dateManager.day5EndingReady &&
-        !endingVideoPlaying
-      ) {
-        room.displayEndingButton();
-      } else {
-        room.displayNextDayButton();
-      }
-    }
-
-    monologue.update();
-
-    // Reset 버튼
-fill(60);
-noStroke();
-rect(30, height - 60, 80, 35, 8);
-fill(255);
-textAlign(CENTER, CENTER);
-textSize(14);
-textStyle(NORMAL);
-text("Reset", 70, height - 43);
-
-// 팝업창
-if (showResetConfirm) {
-  // 어두운 배경
-  fill(0, 0, 0, 160);
-  noStroke();
-  rect(0, 0, width, height);
-
-  // 팝업 박스
-  fill(40);
-  stroke(80);
-  strokeWeight(1);
-  rect(width/2 - 130, height/2 - 70, 260, 140, 12);
-
-  // 텍스트
-  fill(255);
-  noStroke();
-  textAlign(CENTER, CENTER);
-  textSize(16);
-  textStyle(BOLD);
-  text("정말 리셋하시겠습니까?", width/2, height/2 - 30);
-
-  // Yes 버튼
-  fill(200, 40, 60);
-  noStroke();
-  rect(width/2 - 110, height/2 + 10, 100, 38, 8);
-  fill(255);
-  textSize(15);
-  textStyle(NORMAL);
-  text("Yes", width/2 - 60, height/2 + 29);
-
-  // No 버튼
-  fill(70);
-  noStroke();
-  rect(width/2 + 10, height/2 + 10, 100, 38, 8);
-  fill(255);
-  text("No", width/2 + 60, height/2 + 29);
+  drawPlayScreen();
 }
 
-    monologue.display();
+function drawFullScreenVideo(video) {
+  background(0);
+  if (video) {
+    image(video, 0, 0, width, height);
   }
 }
 
-if (gameState === "START") {
+function drawStartScreen() {
   background(20);
+
+  if (!introVideoWatched) {
+    drawOpeningStartScreen();
+  } else {
+    drawInstagramIdInputScreen();
+  }
+}
+
+function drawOpeningStartScreen() {
   fill(255);
   textAlign(CENTER, CENTER);
   textSize(40);
@@ -329,32 +335,88 @@ if (gameState === "START") {
   textSize(24);
   textStyle(NORMAL);
   text("게임 시작하기", width / 2, height / 2 + 10);
-} else {
-  let currentStories = (phone && phone.instagram) ? phone.instagram.stories : [];
-  let currentChats = (phone && phone.instagram && phone.instagram.dm) ? phone.instagram.dm.chatRooms : [];
+}
 
-  let allStoriesRead = currentStories.length === 0 || currentStories.every(s => s.isRead);
-  let allChatsRead = currentChats.length === 0 || currentChats.every(c => !c.unread);
+function drawInstagramIdInputScreen() {
+  fill(255);
+  textAlign(CENTER, CENTER);
+  textSize(34);
+  textStyle(BOLD);
+  text("인스타 아이디 입력", width / 2, height / 3 - 65);
 
-  if (allStoriesRead && allChatsRead) {
-    if (!dateManager.endMonologuePlayed[dateManager.currentDay] && phone.instagram.currentScreen === "feed") {
-      let endText = dateManager.getEndMonologue(dateManager.currentDay);
+  fill(170);
+  textSize(15);
+  textStyle(NORMAL);
+  text("게임 안에서 플레이어 계정명으로 표시됩니다.", width / 2, height / 3 - 25);
 
-      if (endText) {
-        monologue.start(endText);
-      }
+  let inputX = width / 2 - 170;
+  let inputY = height / 2 - 42;
+  let inputW = 340;
+  let inputH = 58;
 
-      dateManager.endMonologuePlayed[dateManager.currentDay] = true;
-    } else if (dateManager.endMonologuePlayed[dateManager.currentDay] && !monologue.active) {
-      room.goNextDay = true;
-    } else {
-      room.goNextDay = false;
-    }
+  stroke(idInputFocused ? color(90, 150, 255) : color(95));
+  strokeWeight(2);
+  fill(30);
+  rect(inputX, inputY, inputW, inputH, 14);
+
+  noStroke();
+  textAlign(LEFT, CENTER);
+  textSize(22);
+  textStyle(NORMAL);
+
+  fill(130);
+  text("@", inputX + 22, inputY + inputH / 2);
+
+  let shown = idInputText;
+  let cursor = idInputFocused && frameCount % 60 < 30 ? "|" : "";
+  if (shown.length === 0) {
+    fill(95);
+    text("your_id", inputX + 52, inputY + inputH / 2);
   } else {
-    room.goNextDay = false;
+    fill(255);
+    text(shown + cursor, inputX + 52, inputY + inputH / 2);
   }
 
-  room.display();
+  fill(150);
+  textAlign(CENTER, CENTER);
+  textSize(13);
+  text("최대 10자 · 영어, 숫자, _, . 만 사용 가능", width / 2, inputY + inputH + 25);
+  text("입력한 아이디는 저장되지 않습니다.", width / 2, inputY + inputH + 48);
+
+  if (idInputError) {
+    fill(255, 95, 110);
+    textSize(13);
+    text(idInputError, width / 2, inputY + inputH + 74);
+  }
+
+  let startEnabled = isValidInstagramId(idInputText);
+  fill(startEnabled ? color(200, 40, 60) : color(75));
+  noStroke();
+  rect(width / 2 - 110, height / 2 + 100, 220, 58, 15);
+
+  fill(startEnabled ? 255 : 150);
+  textSize(22);
+  textStyle(BOLD);
+  text("게임 시작", width / 2, height / 2 + 129);
+}
+
+function drawPlayScreen() {
+  updateEndOfDayMonologue();
+
+  if (!instagramStarted && dateManager.currentDay === 1) {
+    room.display();
+  } else {
+    background(0);
+
+    fill(255, 200);
+    textAlign(LEFT, TOP);
+    textSize(36);
+    textStyle(BOLD);
+
+    let dayText = dateManager.currentDay === 0 ? "Day 0" : `Day ${dateManager.currentDay}`;
+    text(dayText, 30, 30);
+  }
+
   phone.update();
 
   if (phone.instagram.currentScreen === "profile") {
@@ -369,7 +431,7 @@ if (gameState === "START") {
 
   phone.display();
 
-  if (!phone.expanded) {
+  if (instagramStarted) {
     if (
       dateManager &&
       dateManager.currentDay === 5 &&
@@ -377,75 +439,161 @@ if (gameState === "START") {
       !endingVideoPlaying
     ) {
       room.displayEndingButton();
-    } else if (!(dateManager && dateManager.currentDay === 5)) {
+    } else {
       room.displayNextDayButton();
     }
   }
 
-  monologue.update();
+  if (!dayTransitionActive) {
+    monologue.update();
+  }
+
+  drawResetButton();
+  drawResetConfirmPopup();
+
   monologue.display();
 }
 
+function updateEndOfDayMonologue() {
+  if (!dateManager || !phone || !phone.instagram) return;
+  if (dayTransitionActive) return;
+
+  let currentStories = phone.instagram.stories || [];
+  let currentChats = phone.instagram.dm ? phone.instagram.dm.chatRooms : [];
+
+  let allStoriesRead = currentStories.length === 0 || currentStories.every(s => s.isRead);
+  let allChatsRead = currentChats.length === 0 || currentChats.every(c => !c.unread);
+
+  if (allStoriesRead && allChatsRead) {
+    if (!dateManager.endMonologuePlayed[dateManager.currentDay] && phone.instagram.currentScreen === "feed") {
+      let endText = dateManager.getEndMonologue(dateManager.currentDay);
+      if (endText) {
+        monologue.start(endText);
+      }
+      dateManager.endMonologuePlayed[dateManager.currentDay] = true;
+    } else if (dateManager.endMonologuePlayed[dateManager.currentDay] && !monologue.active) {
+      room.goNextDay = true;
+    } else {
+      room.goNextDay = false;
+    }
+  } else {
+    room.goNextDay = false;
+  }
+}
+
+function drawResetButton() {
+  fill(60);
+  noStroke();
+  rect(30, height - 60, 80, 35, 8);
+
+  fill(255);
+  textAlign(CENTER, CENTER);
+  textSize(14);
+  textStyle(NORMAL);
+  text("Reset", 70, height - 43);
+}
+
+function drawResetConfirmPopup() {
+  if (!showResetConfirm) return;
+
+  fill(0, 0, 0, 160);
+  noStroke();
+  rect(0, 0, width, height);
+
+  fill(40);
+  stroke(80);
+  strokeWeight(1);
+  rect(width / 2 - 130, height / 2 - 70, 260, 140, 12);
+
+  fill(255);
+  noStroke();
+  textAlign(CENTER, CENTER);
+  textSize(16);
+  textStyle(BOLD);
+  text("정말 리셋하시겠습니까?", width / 2, height / 2 - 30);
+
+  fill(200, 40, 60);
+  noStroke();
+  rect(width / 2 - 110, height / 2 + 10, 100, 38, 8);
+  fill(255);
+  textSize(15);
+  textStyle(NORMAL);
+  text("Yes", width / 2 - 60, height / 2 + 29);
+
+  fill(70);
+  noStroke();
+  rect(width / 2 + 10, height / 2 + 10, 100, 38, 8);
+  fill(255);
+  text("No", width / 2 + 60, height / 2 + 29);
+}
+
+function startDayTransition(day) {
+  let video = getDayTransitionVideo(day);
+
+  // 실제로 정의된 날짜 전환 영상이 없으면 아무 연출도 띄우지 않습니다.
+  if (!video) {
+    dayTransitionActive = false;
+    currentDayTransitionVideo = null;
+    return false;
+  }
+
+  if (currentDayTransitionVideo && currentDayTransitionVideo !== video) {
+    currentDayTransitionVideo.stop();
+    currentDayTransitionVideo.time(0);
+  }
+
+  currentDayTransitionVideo = video;
+  dayTransitionActive = true;
+
+  video.stop();
+  video.time(0);
+  video.play();
+
+  return true;
+}
+
+function drawDayTransitionVideo() {
+  background(0);
+
+  if (!currentDayTransitionVideo) {
+    stopDayTransitionVideo();
+    return;
+  }
+
+  image(currentDayTransitionVideo, 0, 0, width, height);
+
+  if (currentDayTransitionVideo.elt.ended) {
+    stopDayTransitionVideo();
+  }
+}
+
+function stopDayTransitionVideo() {
+  if (currentDayTransitionVideo) {
+    currentDayTransitionVideo.stop();
+    currentDayTransitionVideo.time(0);
+  }
+
+  currentDayTransitionVideo = null;
+  dayTransitionActive = false;
+}
+
 function mousePressed() {
+  if (dayTransitionActive) return;
 
-  // 팝업 중일 때
-if (showResetConfirm) {
-  // Yes
-  if (mouseX > width/2 - 110 && mouseX < width/2 - 10 &&
-      mouseY > height/2 + 10 && mouseY < height/2 + 48) {
-    showResetConfirm = false;
-    gameState = "START";
-    instagramStarted = false;
-    dateManager = new DateManager();
-    phone = new PhoneUI();
-    monologue = new MonologueSystem();
-    storyUploader = new StoryUploader(phone.instagram);
-    dateManager.loadDailyData();
+  if (showResetConfirm) {
+    handleResetConfirmClick();
+    return;
   }
-  // No
-  if (mouseX > width/2 + 10 && mouseX < width/2 + 110 &&
-      mouseY > height/2 + 10 && mouseY < height/2 + 48) {
-    showResetConfirm = false;
-  }
-  return;
-}
 
-// Reset 버튼 클릭
-if (
-  mouseX > 30 && mouseX < 110 &&
-  mouseY > height - 60 && mouseY < height - 25
-) {
-  showResetConfirm = true;
-  return;
-}
+  if (gameState !== "START" && isResetButtonClicked(mouseX, mouseY)) {
+    showResetConfirm = true;
+    return;
+  }
 
   if (gameState === "START") {
-  if (
-    mouseX > width / 2 - 100 &&
-    mouseX < width / 2 + 100 &&
-    mouseY > height / 2 - 20 &&
-    mouseY < height / 2 + 40
-  ) {
-
-    userStartAudio();
-
-    // 첫 클릭 → 영상 재생
-    if (!introVideoWatched) {
-      introVideoPlaying = true;
-      introVideo.play();
-      return;
-    }
-
-    // 두 번째 클릭 → 실제 게임 시작
-    gameState = "PLAY";
-
-    if (bgmManager) {
-      bgmManager.playForDay(dateManager.currentDay);
-    }
+    handleStartScreenClick();
+    return;
   }
-
-  return;
-}
 
   if (monologue.active) {
     monologue.checkClick();
@@ -459,4 +607,209 @@ if (
   }
 
   phone.handleMousePressed();
+}
+
+function handleStartScreenClick() {
+  if (!introVideoWatched) {
+    if (isOpeningStartButtonClicked(mouseX, mouseY)) {
+      userStartAudio();
+      introVideoPlaying = true;
+      introVideo.play();
+    }
+    return;
+  }
+
+  idInputFocused = isIdInputClicked(mouseX, mouseY);
+
+  if (isIdStartButtonClicked(mouseX, mouseY)) {
+    startGameFromIdInput();
+  }
+}
+
+function isOpeningStartButtonClicked(mx, my) {
+  return (
+    mx > width / 2 - 100 &&
+    mx < width / 2 + 100 &&
+    my > height / 2 - 20 &&
+    my < height / 2 + 40
+  );
+}
+
+function isIdInputClicked(mx, my) {
+  let inputX = width / 2 - 170;
+  let inputY = height / 2 - 42;
+  let inputW = 340;
+  let inputH = 58;
+
+  return mx >= inputX && mx <= inputX + inputW && my >= inputY && my <= inputY + inputH;
+}
+
+function isIdStartButtonClicked(mx, my) {
+  return mx >= width / 2 - 110 && mx <= width / 2 + 110 && my >= height / 2 + 100 && my <= height / 2 + 158;
+}
+
+function startGameFromIdInput() {
+  let cleanId = sanitizeInstagramId(idInputText.trim());
+
+  if (!isValidInstagramId(cleanId)) {
+    idInputError = "아이디를 1~10자의 영어, 숫자, _, . 로 입력해 주세요.";
+    idInputFocused = true;
+    return;
+  }
+
+  playerInstagramId = cleanId;
+  idInputText = cleanId;
+  idInputError = "";
+
+  applyPlayerInstagramId();
+  dateManager.loadDailyData();
+
+  if (phone && phone.instagram) {
+    phone.instagram.currentAccount = "main";
+    phone.instagram.currentScreen = "feed";
+  }
+
+  gameState = "PLAY";
+  instagramStarted = false;
+
+  if (bgmManager) {
+    bgmManager.playForDay(dateManager.currentDay);
+  }
+
+  startDayTransition(dateManager.currentDay);
+}
+
+function isResetButtonClicked(mx, my) {
+  return mx > 30 && mx < 110 && my > height - 60 && my < height - 25;
+}
+
+function handleResetConfirmClick() {
+  if (
+    mouseX > width / 2 - 110 && mouseX < width / 2 - 10 &&
+    mouseY > height / 2 + 10 && mouseY < height / 2 + 48
+  ) {
+    resetGameToStartScreen();
+    return;
+  }
+
+  if (
+    mouseX > width / 2 + 10 && mouseX < width / 2 + 110 &&
+    mouseY > height / 2 + 10 && mouseY < height / 2 + 48
+  ) {
+    showResetConfirm = false;
+  }
+}
+
+function resetGameToStartScreen() {
+  showResetConfirm = false;
+  gameState = "START";
+  instagramStarted = false;
+
+  // 1-1. 리셋 시 주인공 인스타 아이디와 도입부 진행 상태를 모두 초기화
+  playerInstagramId = "";
+  idInputText = "";
+  idInputError = "";
+  idInputFocused = true;
+  introVideoWatched = false;
+  introVideoPlaying = false;
+  endingVideoPlaying = false;
+  stopDayTransitionVideo();
+
+  if (introVideo) {
+    introVideo.stop();
+    introVideo.time(0);
+  }
+
+  if (endingVideo) {
+    endingVideo.stop();
+    endingVideo.time(0);
+  }
+
+  if (bgmManager) {
+    bgmManager.stopAll();
+  }
+
+  initializeGameObjects();
+}
+
+function keyPressed() {
+  if (gameState === "START" && introVideoWatched) {
+    // Backspace/Enter처럼 keyPressed에서 직접 처리해야 하는 키만 막는다.
+    // 일반 문자 키까지 return false로 막으면 브라우저가 keyTyped 이벤트를 발생시키지 않아
+    // 아이디 입력창에 글자가 들어가지 않는다.
+    if (handleIdInputKeyPressed()) {
+      return false;
+    }
+    return;
+  }
+
+  if (
+    gameState === "PLAY" &&
+    !dayTransitionActive &&
+    !showResetConfirm &&
+    !(monologue && monologue.active) &&
+    phone && phone.instagram && phone.instagram.dm &&
+    typeof phone.instagram.dm.handleKeyPressed === "function" &&
+    phone.instagram.dm.handleKeyPressed(key, keyCode)
+  ) {
+    return false;
+  }
+}
+
+function keyTyped() {
+  if (gameState === "START" && introVideoWatched) {
+    if (handleIdInputKeyTyped(key)) {
+      return false;
+    }
+    return;
+  }
+
+  if (
+    gameState === "PLAY" &&
+    !dayTransitionActive &&
+    !showResetConfirm &&
+    !(monologue && monologue.active) &&
+    phone && phone.instagram && phone.instagram.dm &&
+    typeof phone.instagram.dm.handleKeyTyped === "function" &&
+    phone.instagram.dm.handleKeyTyped(key)
+  ) {
+    return false;
+  }
+}
+
+function handleIdInputKeyPressed() {
+  if (!idInputFocused) return false;
+
+  if (keyCode === BACKSPACE) {
+    idInputText = idInputText.slice(0, -1);
+    idInputError = "";
+    return true;
+  }
+
+  if (keyCode === ENTER) {
+    startGameFromIdInput();
+    return true;
+  }
+
+  return false;
+}
+
+function handleIdInputKeyTyped(ch) {
+  if (!idInputFocused) return false;
+  if (!ch || ch.length !== 1) return false;
+
+  if (!/[A-Za-z0-9_.]/.test(ch)) {
+    idInputError = "영어, 숫자, _, . 만 사용할 수 있습니다.";
+    return true;
+  }
+
+  if (idInputText.length >= INSTAGRAM_ID_MAX_LENGTH) {
+    idInputError = "아이디는 최대 10자까지 입력할 수 있습니다.";
+    return true;
+  }
+
+  idInputText += ch;
+  idInputText = sanitizeInstagramId(idInputText);
+  idInputError = "";
+  return true;
 }

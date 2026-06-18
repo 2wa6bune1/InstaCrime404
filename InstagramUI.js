@@ -690,43 +690,122 @@ class InstagramUI {
 
   changeAccount() {
     if (this.currentAccount === "main") {
-      this.currentAccount = "sub";
+      if (this.dm && typeof this.dm.openSubAccountPasswordPrompt === "function") {
+        this.dm.openSubAccountPasswordPrompt();
+      }
     } else {
       this.currentAccount = "main";
     }
+
     this.targetScrollY = 0;
     this.scrollY = 0;
   }
 
   getCurrentAccountUser() {
-    if (typeof dateManager === "undefined") return null;
+    if (typeof dateManager === "undefined" || !dateManager.users) return null;
 
     if (this.currentAccount === "main") {
       return dateManager.users["주인공"];
-    } else {
-      return dateManager.users["의문의_X"];
+    }
+
+    return dateManager.users["부계"] || dateManager.users["의문의_X"] || null;
+  }
+
+  getPlayerAccountName() {
+    if (typeof dateManager !== "undefined" && dateManager) {
+      if (typeof dateManager.getPlayerInstagramId === "function") {
+        return dateManager.getPlayerInstagramId();
+      }
+      if (dateManager.users && dateManager.users["주인공"]) {
+        return dateManager.users["주인공"].name;
+      }
+    }
+
+    if (typeof getPlayerInstagramId === "function") {
+      return getPlayerInstagramId();
+    }
+
+    return "주인공";
+  }
+
+  getSubAccountName() {
+    if (typeof dateManager !== "undefined" && dateManager && dateManager.users) {
+      let subUser = dateManager.users["부계"] || dateManager.users["의문의_X"];
+      if (subUser && subUser.name) return subUser.name;
+    }
+    return "last.frame_";
+  }
+
+  getCurrentAccountName() {
+    return this.currentAccount === "main"
+      ? this.getPlayerAccountName()
+      : this.getSubAccountName();
+  }
+
+  showUnavailableInternetMonologue() {
+    if (typeof monologue !== "undefined" && monologue) {
+      monologue.start("자취방이라 그런가... 인터넷이 잘 안되네...");
     }
   }
 
-handleClick(mx, my) {
-    // 1. 하단 네비게이션바 클릭 처리
-    if (this.currentScreen !== "story" && this.currentScreen !== "storyUpload") {
-      if (my > this.h - this.bottomNavH) {
-        if (abs(mx - 40) < 25) {
-          this.currentScreen = "feed";
-          this.targetScrollY = 0;
-          return;
-        }
-        if (abs(mx - 195) < 25) {
-          this.dm.openDMList();
-          return;
-        }
+  checkHeaderHeartClick(mx, my) {
+    if (dist(mx, my, 355, 32) < 24) {
+      this.showUnavailableInternetMonologue();
+      return true;
+    }
+    return false;
+  }
+
+  checkInactivePostButtonClick(mx, my) {
+    for (let i = 0; i < this.posts.length; i++) {
+      let postY = this.postStartY + i * this.postGap;
+      let iconY = postY + 326;
+
+      // 게시물 댓글, 보내기, 저장 버튼은 연출용 버튼으로 처리
+      if (
+        dist(mx, my, 72, iconY) < 22 ||
+        dist(mx, my, 116, iconY) < 22 ||
+        dist(mx, my, 362, iconY) < 22
+      ) {
+        this.showUnavailableInternetMonologue();
+        return true;
       }
+    }
+    return false;
+  }
+
+  handleBottomNavClick(mx, my) {
+    if (my <= this.h - this.bottomNavH) return false;
+
+    let xs = [40, 115, 195, 275, 350];
+    for (let i = 0; i < xs.length; i++) {
+      if (abs(mx - xs[i]) < 25) {
+        // 채팅 버튼만 실제 DM으로 이동합니다.
+        if (i === 2) {
+          this.dm.openDMList();
+        } else {
+          this.showUnavailableInternetMonologue();
+        }
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  handleClick(mx, my) {
+    // 1. 하단 네비게이션바 클릭 처리
+    if (this.currentScreen === "feed") {
+      if (this.handleBottomNavClick(mx, my)) return;
     }
 
     // 2. 화면별 클릭 위임
     if (this.currentScreen === "feed") {
+      if (this.checkHeaderHeartClick(mx, my)) return;
+
       let contentY = my + this.scrollY;
+      if (this.checkInactivePostButtonClick(mx, contentY)) return;
+
       this.checkStoryClick(mx, contentY);
       this.checkLikeClick(mx, contentY);
     } else if (this.currentScreen === "story") {
