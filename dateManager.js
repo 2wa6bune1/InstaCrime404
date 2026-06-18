@@ -30,7 +30,7 @@ class DateManager {
       },
       3: {
         start: "채팅이 온 것 같다. 그러고보니 서아가 죽고 침울해져서 한동안 우리끼리도 이야기를 나누지 않았었지.",
-        end: "수아가 그동안 쓰던 줄 이어폰을 바꾼듯하다."
+        end: "수진이가 그동안 쓰던 줄 이어폰을 바꾼듯하다."
       },
       4: {
         start: "이게 뭐지...?",
@@ -52,7 +52,7 @@ class DateManager {
       "주인공": new User("내 스토리", imgProfileMain),
       "박서아": new User("seoa.archive", imgProfileFriend),
       "최지안": new User("its_ji.anni", imgProfileNpc),
-      "정수아": new User("sooah.jung", imgProfileRival),
+      "정수진": new User("su.zinni_", imgProfileRival),
       "이서준": new User("seo_jun.lee", imgProfileAlba),
       "강하은": new User("grace_haeun", imgProfileCop),
       "부계": new User("last.frame_", imgProfileX),
@@ -98,7 +98,7 @@ class DateManager {
       
       dailyStories.push(new Story(this.users["부계"], accountX1, "", "default", "이 계정... 왠지 익숙한데, 기분 탓인가?"));
       
-      dailyStories.push(new Story(this.users["정수아"], sooah1));
+      dailyStories.push(new Story(this.users["정수진"], sooah1));
       dailyStories.push(new Story(this.users["이서준"], seojun1));
       
       // 포스트
@@ -120,11 +120,11 @@ class DateManager {
         users: [
           this.users["박서아"],
           this.users["최지안"],
-          this.users["정수아"],
+          this.users["정수진"],
           this.users["이서준"],
           this.users["강하은"]
         ],
-        memberNames: ["박서아", "최지안", "정수아", "이서준", "강하은"],
+        memberNames: ["박서아", "최지안", "정수진", "이서준", "강하은"],
         active: false,
         unread: true,
         seen: false,
@@ -144,9 +144,9 @@ class DateManager {
           { text: "혹시 저녁에 살인사건 기사 뜬 거 봤어?", sender: "최지안", user: this.users["최지안"] },
           { text: "이거 서아 아니겠지?", sender: "최지안", user: this.users["최지안"] },
           { text: "설마", sender: "이서준", user: this.users["이서준"] },
-          { text: "수아야 너 서아 부모님 연락처 알지", sender: "이서준", user: this.users["이서준"] },
+          { text: "수진아 너 서아 부모님 연락처 알지", sender: "이서준", user: this.users["이서준"] },
           { text: "ㅂ빨리 ㅇ연락드려봐", sender: "이서준", user: this.users["이서준"] },
-          { text: "방금 서아 부모님께 연락 드렸는데... 맞대", sender: "정수아", user: this.users["정수아"] }
+          { text: "방금 서아 부모님께 연락 드렸는데... 맞대", sender: "정수진", user: this.users["정수진"] }
         ]
       });
 
@@ -155,11 +155,11 @@ class DateManager {
         isGroup: true,
         users: [
           this.users["박서아"],
-          this.users["정수아"],
+          this.users["정수진"],
           this.users["이서준"],
           this.users["강하은"]
         ],
-        memberNames: ["박서아", "정수아", "이서준", "강하은"],
+        memberNames: ["박서아", "정수진", "이서준", "강하은"],
         active: false,
         unread: false,
         seen: true,
@@ -202,8 +202,8 @@ class DateManager {
       dailyStories.push(new Story(this.users["최지안"], jian2_3));
       dailyStories.push(new Story(this.users["최지안"], jian2_4));
       dailyStories.push(new Story(this.users["부계"], accountX2));
-      dailyStories.push(new Story(this.users["정수아"], jian2_3));
-      dailyStories.push(new Story(this.users["정수아"], jian2_4));
+      dailyStories.push(new Story(this.users["정수진"], jian2_3));
+      dailyStories.push(new Story(this.users["정수진"], jian2_4));
       dailyStories.push(new Story(this.users["이서준"], seojun2_1));
       dailyStories.push(new Story(this.users["이서준"], seojun2_2, "", "friend"));
 
@@ -247,11 +247,11 @@ class DateManager {
         users: [
           this.users["박서아"],
           this.users["최지안"],
-          this.users["정수아"],
+          this.users["정수진"],
           this.users["이서준"],
           this.users["강하은"]
         ],
-        memberNames: ["박서아", "최지안", "정수아", "이서준", "강하은"],
+        memberNames: ["박서아", "최지안", "정수진", "이서준", "강하은"],
         active: false,
         unread: false,
         seen: true,
@@ -271,9 +271,9 @@ class DateManager {
           { text: "혹시 저녁에 살인사건 기사 뜬 거 봤어?", sender: "최지안", user: this.users["최지안"] },
           { text: "이거 서아 아니겠지?", sender: "최지안", user: this.users["최지안"] },
           { text: "설마", sender: "이서준", user: this.users["이서준"] },
-          { text: "수아야 너 서아 부모님 연락처 알지", sender: "이서준", user: this.users["이서준"] },
+          { text: "수진아 너 서아 부모님 연락처 알지", sender: "이서준", user: this.users["이서준"] },
           { text: "ㅂ빨리 ㅇ연락드려봐", sender: "이서준", user: this.users["이서준"] },
-          { text: "방금 서아 부모님께 연락 드렸는데... 맞대", sender: "정수아", user: this.users["정수아"] }
+          { text: "방금 서아 부모님께 연락 드렸는데... 맞대", sender: "정수진", user: this.users["정수진"] }
         ]
       });
 
@@ -282,11 +282,11 @@ class DateManager {
         isGroup: true,
         users: [
           this.users["박서아"],
-          this.users["정수아"],
+          this.users["정수진"],
           this.users["이서준"],
           this.users["강하은"]
         ],
-        memberNames: ["박서아", "정수아", "이서준", "강하은"],
+        memberNames: ["박서아", "정수진", "이서준", "강하은"],
         active: false,
         unread: false,
         seen: true,
@@ -314,7 +314,7 @@ class DateManager {
     // ================= [ 3일차 ] =================
     else if (this.currentDay === 3) {
       dailyStories.push(new Story(this.users["이서준"], seojun3));
-      dailyStories.push(new Story(this.users["정수아"], sooah3));
+      dailyStories.push(new Story(this.users["정수진"], sooah3));
       dailyStories.push(new Story(this.users["부계"], accountX3));
       dailyStories.push(new Story(this.users["강하은"], haeun3));
       dailyStories.push(new Story(this.users["최지안"], jian3_1)); 
@@ -372,11 +372,11 @@ class DateManager {
         users: [
           this.users["박서아"],
           this.users["최지안"],
-          this.users["정수아"],
+          this.users["정수진"],
           this.users["이서준"],
           this.users["강하은"]
         ],
-        memberNames: ["박서아", "최지안", "정수아", "이서준", "강하은"],
+        memberNames: ["박서아", "최지안", "정수진", "이서준", "강하은"],
         active: false,
         unread: true,
         seen: false,
@@ -396,9 +396,9 @@ class DateManager {
           { text: "혹시 저녁에 살인사건 기사 뜬 거 봤어?", sender: "최지안", user: this.users["최지안"] },
           { text: "이거 서아 아니겠지?", sender: "최지안", user: this.users["최지안"] },
           { text: "설마", sender: "이서준", user: this.users["이서준"] },
-          { text: "수아야 너 서아 부모님 연락처 알지", sender: "이서준", user: this.users["이서준"] },
+          { text: "수진아 너 서아 부모님 연락처 알지", sender: "이서준", user: this.users["이서준"] },
           { text: "ㅂ빨리 ㅇ연락드려봐", sender: "이서준", user: this.users["이서준"] },
-          { text: "방금 서아 부모님께 연락 드렸는데... 맞대", sender: "정수아", user: this.users["정수아"] },
+          { text: "방금 서아 부모님께 연락 드렸는데... 맞대", sender: "정수진", user: this.users["정수진"] },
 
           { separator: "오늘" },
           { text: "서준이 너", sender: "최지안", user: this.users["최지안"] },
@@ -433,11 +433,11 @@ class DateManager {
         isGroup: true,
         users: [
           this.users["박서아"],
-          this.users["정수아"],
+          this.users["정수진"],
           this.users["이서준"],
           this.users["강하은"]
         ],
-        memberNames: ["박서아", "정수아", "이서준", "강하은"],
+        memberNames: ["박서아", "정수진", "이서준", "강하은"],
         active: false,
         unread: false,
         seen: true,
@@ -462,7 +462,7 @@ class DateManager {
       dailyStories.push(new Story(this.users["부계"], accountX4));
       dailyStories.push(new Story(this.users["이서준"], seojun4_1));
       dailyStories.push(new Story(this.users["이서준"], seojun4_2, "", "friend"));
-      dailyStories.push(new Story(this.users["정수아"], sooah4));
+      dailyStories.push(new Story(this.users["정수진"], sooah4));
       
       dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "드라마 비밀의 도시 시청률 15% 돌파 ㄷㄷ \n@야 너도 이거 봐??", 75, color(20), news8));
       dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "국가대표 축구팀 극적 역전승, 8강 진출 미쳤다...", 739, color(20), news9));
@@ -473,11 +473,11 @@ class DateManager {
         users: [
           this.users["박서아"],
           this.users["최지안"],
-          this.users["정수아"],
+          this.users["정수진"],
           this.users["이서준"],
           this.users["강하은"]
         ],
-        memberNames: ["박서아", "최지안", "정수아", "이서준", "강하은"],
+        memberNames: ["박서아", "최지안", "정수진", "이서준", "강하은"],
         active: false,
         unread: false,
         seen: true,
@@ -497,9 +497,9 @@ class DateManager {
           { text: "혹시 저녁에 살인사건 기사 뜬 거 봤어?", sender: "최지안", user: this.users["최지안"] },
           { text: "이거 서아 아니겠지?", sender: "최지안", user: this.users["최지안"] },
           { text: "설마", sender: "이서준", user: this.users["이서준"] },
-          { text: "수아야 너 서아 부모님 연락처 알지", sender: "이서준", user: this.users["이서준"] },
+          { text: "수진아 너 서아 부모님 연락처 알지", sender: "이서준", user: this.users["이서준"] },
           { text: "ㅂ빨리 ㅇ연락드려봐", sender: "이서준", user: this.users["이서준"] },
-          { text: "방금 서아 부모님께 연락 드렸는데... 맞대", sender: "정수아", user: this.users["정수아"] },
+          { text: "방금 서아 부모님께 연락 드렸는데... 맞대", sender: "정수진", user: this.users["정수진"] },
 
           { separator: "어제" },
           { text: "서준이 너", sender: "최지안", user: this.users["최지안"] },
@@ -520,8 +520,8 @@ class DateManager {
       });
 
       dailyChats.push({
-        name: "정수아",
-        user: this.users["정수아"],
+        name: "정수진",
+        user: this.users["정수진"],
         avatarColor: [255, 140, 180],
         active: false,
         unread: false,
@@ -613,11 +613,11 @@ class DateManager {
         isGroup: true,
         users: [
           this.users["박서아"],
-          this.users["정수아"],
+          this.users["정수진"],
           this.users["이서준"],
           this.users["강하은"]
         ],
-        memberNames: ["박서아", "정수아", "이서준", "강하은"],
+        memberNames: ["박서아", "정수진", "이서준", "강하은"],
         active: false,
         unread: false,
         seen: true,
@@ -673,11 +673,11 @@ class DateManager {
         isGroup: true,
         users: [
           this.users["박서아"],
-          this.users["정수아"],
+          this.users["정수진"],
           this.users["이서준"],
           this.users["강하은"]
         ],
-        memberNames: ["박서아", "정수아", "이서준", "강하은"],
+        memberNames: ["박서아", "정수진", "이서준", "강하은"],
         active: false,
         unread: false,
         seen: true,
