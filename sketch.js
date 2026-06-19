@@ -19,8 +19,10 @@ let day5HandImg;
 let endingVideo;
 let endingVideoPlaying = false;
 
-let dayZeroReplayVideo;
-let dayZeroReplayVideoPlaying = false;
+// 0일차 채팅의 "▶영상 보기"를 눌렀을 때 재생되는 영상
+// assets/movie.mp4를 담는 변수
+let endingVideo1;
+let endingVideo1Playing = false;
 
 let gameState = "START";
 let mainImage;
@@ -73,14 +75,22 @@ let currentDayTransitionVideo = null;
 
 let imgProfileMain, imgProfileFriend, imgProfileNpc, imgProfileRival, imgProfileNews;
 let imgProfileAlba, imgProfileCop, imgProfileX, imgProfileShop, imgProfileSystem;
+
 let haeun1, haeun2, haeun3, haeun4, haeun5;
-let jian1_1, jian1_2, jian1_3, jian1_4, jian2_1, jian2_2, jian2_3, jian2_4;
-let jian3_1, jian3_2, jian3_3, jian4_1, jian4_2, jian4_3, jian4_4;
+let seoah1, seoah2, seoah3, seoah4, seoah5, seoah6;
+
+let jian1_1, jian1_2, jian1_3, jian1_4;
+let jian2_1, jian2_2, jian2_3, jian2_4;
+let jian3_1, jian3_2, jian3_3;
+let jian4_1, jian4_2, jian4_3, jian4_4;
+
 let news1, news2, news3, news4, news5, news6, news7, news8, news9;
+
 let seojun1, seojun2_1, seojun2_2, seojun3_v2, seojun4_1, seojun4_2;
+
 let sooah1, sooah3, sooah4;
+
 let accountX0, accountX1, accountX2, accountX3, accountX4, accountX5;
-let endingVideo1;
 
 function preload() {
   bgmManager = new BgmManager();
@@ -116,27 +126,28 @@ function preload() {
   haeun3 = loadImage("assets/haeun3.png");
   haeun4 = loadImage("assets/haeun4.png");
   haeun5 = loadImage("assets/haeun5.png");
+
   seoah1 = loadImage("assets/seoah1.jpg");
-    seoah2 = loadImage("assets/seoah2.jpg");
+  seoah2 = loadImage("assets/seoah2.jpg");
   seoah3 = loadImage("assets/seoah3.png");
   seoah4 = loadImage("assets/seoah4.png");
   seoah5 = loadImage("assets/seoah5.png");
   seoah6 = loadImage("assets/seoah6.png");
-    endingVideo1 = createVideo("assets/movie.mp4");
-  endingVideo1.hide();
-
 
   jian1_1 = loadImage("assets/jian1-1.png");
   jian1_2 = loadImage("assets/jian1-2.png");
   jian1_3 = loadImage("assets/jian1-3.png");
   jian1_4 = loadImage("assets/jian1-4.png");
+
   jian2_1 = loadImage("assets/jian2-1.png");
   jian2_2 = loadImage("assets/jian2-2.png");
   jian2_3 = loadImage("assets/jian2-3.png");
   jian2_4 = loadImage("assets/jian2-4.png");
+
   jian3_1 = loadImage("assets/jian3-1.png");
   jian3_2 = loadImage("assets/jian3-2.png");
   jian3_3 = loadImage("assets/jian3-3.png");
+
   jian4_1 = loadImage("assets/jian4-1.png");
   jian4_2 = loadImage("assets/jian4-2.png");
   jian4_3 = loadImage("assets/jian4-3.png");
@@ -229,8 +240,10 @@ function setup() {
   endingVideo.hide();
 
   // 0일차 채팅의 "▶영상 보기"를 눌렀을 때 재생
-  dayZeroReplayVideo = createVideo("assets/endingVideo.mp4");
-  dayZeroReplayVideo.hide();
+  // 여기서 더 이상 assets/endingVideo.mp4를 만들지 않음.
+  // 그래서 endingVideo.mp4 404 에러가 사라짐.
+  endingVideo1 = createVideo("assets/movie.mp4");
+  endingVideo1.hide();
 }
 
 function initializeGameObjects() {
@@ -371,7 +384,12 @@ function areAllCluesChecked() {
 }
 
 function mouseWheel(event) {
-  if (gameState === "PLAY" && !dayTransitionActive && !endingVideoPlaying && !dayZeroReplayVideoPlaying) {
+  if (
+    gameState === "PLAY" &&
+    !dayTransitionActive &&
+    !endingVideoPlaying &&
+    !endingVideo1Playing
+  ) {
     phone.handleMouseWheel(event);
   }
 
@@ -404,13 +422,14 @@ function draw() {
   }
 
   // 0일차 채팅의 "▶영상 보기" 클릭 시 재생되는 영상
-  if (dayZeroReplayVideoPlaying) {
-    drawFullScreenVideo(dayZeroReplayVideo);
+  // 반드시 endingVideo1 = assets/movie.mp4 를 사용한다.
+  if (endingVideo1Playing) {
+    drawFullScreenVideo(endingVideo1);
 
-    if (dayZeroReplayVideo.elt.ended) {
-      dayZeroReplayVideoPlaying = false;
-      dayZeroReplayVideo.stop();
-      dayZeroReplayVideo.time(0);
+    if (endingVideo1.elt.ended) {
+      endingVideo1Playing = false;
+      endingVideo1.stop();
+      endingVideo1.time(0);
 
       if (
         typeof bgmManager !== "undefined" &&
@@ -515,9 +534,6 @@ function drawOpeningStartScreen() {
 
   let lift = isHovered ? -5 : 0;
   let pulse = 0.5 + 0.5 * sin(frameCount * 0.06);
-
-  // 버튼 모서리 둥글기.
-  // h / 2에 가깝게 잡아서 귀퉁이가 완전히 삭제된 캡슐형 버튼처럼 보이게 함.
   let buttonRadius = 34;
 
   push();
@@ -987,7 +1003,7 @@ function moveGameToDayZeroAfterEndingVideo() {
 
 // 0일차 채팅의 "▶영상 보기" 클릭 시 호출
 function startDayZeroReplayVideo() {
-  if (!dayZeroReplayVideo) return;
+  if (!endingVideo1) return;
 
   if (
     typeof bgmManager !== "undefined" &&
@@ -997,17 +1013,17 @@ function startDayZeroReplayVideo() {
     bgmManager.stopAll();
   }
 
-  dayZeroReplayVideoPlaying = true;
+  endingVideo1Playing = true;
 
-  dayZeroReplayVideo.stop();
-  dayZeroReplayVideo.time(0);
-  dayZeroReplayVideo.play();
+  endingVideo1.stop();
+  endingVideo1.time(0);
+  endingVideo1.play();
 }
 
 function mousePressed() {
   if (dayTransitionActive) return;
   if (endingVideoPlaying) return;
-  if (dayZeroReplayVideoPlaying) return;
+  if (endingVideo1Playing) return;
 
   if (showResetConfirm) {
     handleResetConfirmClick();
@@ -1164,7 +1180,7 @@ function resetGameToStartScreen() {
   introVideoWatched = false;
   introVideoPlaying = false;
   endingVideoPlaying = false;
-  dayZeroReplayVideoPlaying = false;
+  endingVideo1Playing = false;
 
   stopDayTransitionVideo();
 
@@ -1182,9 +1198,9 @@ function resetGameToStartScreen() {
     }
   }
 
-  if (dayZeroReplayVideo) {
-    dayZeroReplayVideo.stop();
-    dayZeroReplayVideo.time(0);
+  if (endingVideo1) {
+    endingVideo1.stop();
+    endingVideo1.time(0);
   }
 
   if (bgmManager) {
@@ -1208,7 +1224,7 @@ function keyPressed() {
     !dayTransitionActive &&
     !showResetConfirm &&
     !endingVideoPlaying &&
-    !dayZeroReplayVideoPlaying &&
+    !endingVideo1Playing &&
     !(monologue && monologue.active) &&
     phone &&
     phone.instagram &&
@@ -1234,7 +1250,7 @@ function keyTyped() {
     !dayTransitionActive &&
     !showResetConfirm &&
     !endingVideoPlaying &&
-    !dayZeroReplayVideoPlaying &&
+    !endingVideo1Playing &&
     !(monologue && monologue.active) &&
     phone &&
     phone.instagram &&

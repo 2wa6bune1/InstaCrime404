@@ -475,17 +475,7 @@ this.storyUploadResult = null;
       
       dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "드라마 비밀의 도시 시청률 15% 돌파 ㄷㄷ \n@야 너도 이거 봐??", 75, color(20), news8));
       dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "국가대표 축구팀 극적 역전승, 8강 진출 미쳤다...", 739, color(20), news9));
-      dailyChats.push({
-        name: "정수진", user: this.users["최지안"], avatarColor: [90, 180, 180], active: false, unread: false, seen: true, time: "3일전",
-        messages: [
-          { separator: "어제" },
-          { text: "에어팟 어때?", sent: false },
-          { text: "이거 진짜 말 안돼", sent: true },
-          { text: "너도 그동안 줄 이어폰 썼잖아. 이김에 바꿔봐", sent: true },
-          { text: "그럴까... 나도 쓰던거 부산에서 잃어버린긴 했는데...", sent: false }
 
-        ]
-      });
       
       dailyChats.push({
         name: "강하은",
@@ -517,6 +507,18 @@ this.storyUploadResult = null;
           { text: "악령이 들린거 아니야?", sent: false }
 
 
+
+        ]
+      });
+
+            dailyChats.push({
+        name: "정수진", user: this.users["최지안"], avatarColor: [90, 180, 180], active: false, unread: false, seen: true, time: "3일전",
+        messages: [
+          { separator: "어제" },
+          { text: "에어팟 어때?", sent: false },
+          { text: "이거 진짜 말 안돼", sent: true },
+          { text: "너도 그동안 줄 이어폰 썼잖아. 이김에 바꿔봐", sent: true },
+          { text: "그럴까... 나도 쓰던거 부산에서 잃어버린긴 했는데...", sent: false }
 
         ]
       });
@@ -682,7 +684,6 @@ this.storyUploadResult = null;
           { text: "어딘데?", sent: false },
 { text: "▶영상 보기", sent: true, video: "endingVideo1" }        ]
       });
-            dailyStories.push(new Story(this.users["강하은"], haeun4));
 
 
       dailyChats.push({
