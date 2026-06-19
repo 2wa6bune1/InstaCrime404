@@ -3,23 +3,30 @@
 // ======================================================
 class InstagramDM {
   constructor(parentUI) {
-    this.ui = parentUI; // InstagramUI 객체 참조 (w, h 등 화면 크기 사용)
+    this.ui = parentUI;
+
     this.dmScrollY = 0;
     this.dmTargetScrollY = 0;
+
     this.chatScrollY = 0;
     this.chatTargetScrollY = 0;
+
     this.currentChatRoom = 0;
     this.chatInputText = "";
     this.chatCursorBlink = 0;
+
     this._chatPressed = false;
     this._chatDragDist = 0;
     this._chatDragMode = null;
+
     this.chatRooms = [];
 
     // DM 상단 계정명 클릭 시 열리는 인스타그램식 계정 전환 시트
     this.accountSwitcherOpen = false;
 
-    // 부계정 진입 시 잠깐 보여줄 비밀번호 입력창 상태
+    // 이전 버전 호환용 상태.
+    // 지금은 1~3일차에는 비밀번호 창 대신 독백만 띄우고,
+    // 4일차 이후에는 바로 전환되게 처리.
     this.passwordPromptOpen = false;
     this.closePasswordPromptWhenMonoEnds = false;
   }
@@ -37,9 +44,9 @@ class InstagramDM {
   }
 
   update(appMouse) {
-    // 채팅방 진입 시 독백 실행 처리
     if (this.ui.currentScreen === "chatRoom") {
       let currentChat = this.chatRooms[this.currentChatRoom];
+
       if (currentChat && currentChat.monoText && !currentChat.monoPlayed) {
         monologue.start(currentChat.monoText);
         currentChat.monoPlayed = true;
@@ -79,15 +86,27 @@ class InstagramDM {
 
   handleWheel(event) {
     if (this.ui.currentScreen === "dmList") {
-      this.dmTargetScrollY = constrain(this.dmTargetScrollY + event.deltaY * 0.7, 0, this.getDMMaxScroll());
+      this.dmTargetScrollY = constrain(
+        this.dmTargetScrollY + event.deltaY * 0.7,
+        0,
+        this.getDMMaxScroll()
+      );
     } else if (this.ui.currentScreen === "chatRoom") {
-      this.chatTargetScrollY = constrain(this.chatTargetScrollY + event.deltaY * 0.7, 0, this.getChatMaxScroll());
+      this.chatTargetScrollY = constrain(
+        this.chatTargetScrollY + event.deltaY * 0.7,
+        0,
+        this.getChatMaxScroll()
+      );
     }
   }
 
   getUnreadCount() {
     let n = 0;
-    for (let r of this.chatRooms) if (r.unread) n++;
+
+    for (let r of this.chatRooms) {
+      if (r.unread) n++;
+    }
+
     return n;
   }
 
@@ -99,7 +118,9 @@ class InstagramDM {
     this.accountSwitcherOpen = false;
     this.passwordPromptOpen = false;
     this.closePasswordPromptWhenMonoEnds = false;
+
     this.ui.currentScreen = "dmList";
+
     this.dmTargetScrollY = 0;
     this.dmScrollY = 0;
   }
@@ -107,8 +128,13 @@ class InstagramDM {
   openChatRoom(index) {
     this.accountSwitcherOpen = false;
     this.currentChatRoom = index;
+
     let room = this.chatRooms[index];
-    room.unread = false;
+
+    if (room) {
+      room.unread = false;
+    }
+
     this.ui.currentScreen = "chatRoom";
     this.chatInputText = "";
     this.chatTargetScrollY = this.getChatMaxScroll();
@@ -117,11 +143,14 @@ class InstagramDM {
 
   sendMessage(txt) {
     if (!txt) return;
+
     let room = this.room();
     if (!room.messages) room.messages = [];
+
     room.messages.push({ text: txt, sent: true });
     room.seen = false;
     room.time = "지금";
+
     this.chatInputText = "";
     this.chatTargetScrollY = 1e9;
   }
@@ -129,36 +158,49 @@ class InstagramDM {
   getDMMaxScroll() {
     let itemH = 72;
     let contentH = 112 + this.chatRooms.length * itemH + 12;
+
     return max(0, contentH - this.ui.h);
   }
 
   getChatMaxScroll() {
-    let headerH = 70, inputH = 60;
+    let headerH = 70;
+    let inputH = 60;
     let viewH = this.ui.h - headerH - inputH;
     let total = this.layoutChatMessages().totalH;
+
     return max(0, total - viewH);
   }
 
   updateChatScroll(appMouse) {
-    const scaleFactor = (typeof phone !== "undefined") ? phone.scale : 1;
+    const scaleFactor = typeof phone !== "undefined" ? phone.scale : 1;
     const isChat = this.ui.currentScreen === "chatRoom";
     let maxScroll = isChat ? this.getChatMaxScroll() : this.getDMMaxScroll();
 
     if (mouseIsPressed && !this._chatPressed) {
       this._chatPressed = true;
       this._chatDragDist = 0;
-      this._chatDragMode = (appMouse && appMouse.y > 112) ? (isChat ? "chat" : "dm") : null;
+      this._chatDragMode =
+        appMouse && appMouse.y > 112
+          ? isChat
+            ? "chat"
+            : "dm"
+          : null;
     }
-    if (!mouseIsPressed) { 
-      this._chatPressed = false; 
-      this._chatDragMode = null; 
+
+    if (!mouseIsPressed) {
+      this._chatPressed = false;
+      this._chatDragMode = null;
     }
 
     if (mouseIsPressed && this._chatDragMode) {
       let dy = movedY / scaleFactor;
       this._chatDragDist += abs(movedY);
-      if (isChat) this.chatTargetScrollY -= dy;
-      else this.dmTargetScrollY -= dy;
+
+      if (isChat) {
+        this.chatTargetScrollY -= dy;
+      } else {
+        this.dmTargetScrollY -= dy;
+      }
     }
 
     if (isChat) {
@@ -179,48 +221,115 @@ class InstagramDM {
       return;
     }
 
-    // DM 상단 계정명/화살표 클릭: 인스타그램식 계정 전환 시트를 먼저 엽니다.
-    if (this.isAccountNameClicked(mx, my)) {
+    // 계정명/화살표는 항상 기존처럼 보이고,
+    // 1~3일차에는 독백만 출력.
+    if (this.isAccountNameAreaClicked(mx, my)) {
+      if (!this.isAccountSwitchUnlocked()) {
+        this.accountSwitcherOpen = false;
+        this.showAccountSwitchLockedMonologue();
+        return;
+      }
+
       this.accountSwitcherOpen = !this.accountSwitcherOpen;
       return;
     }
 
     if (this.accountSwitcherOpen) {
       if (this.handleAccountSwitcherClick(mx, my)) return;
+
       this.accountSwitcherOpen = false;
       return;
     }
 
     if (this._chatDragDist > 6) return;
 
-    let listTop = 112, itemH = 72;
+    let listTop = 112;
+    let itemH = 72;
     let y0 = listTop - this.dmScrollY;
+
     for (let i = 0; i < this.chatRooms.length; i++) {
       let top = y0 + i * itemH;
-      if (my > Math.max(top, 112) && my < top + itemH) { this.openChatRoom(i); return; }
+
+      if (my > Math.max(top, 112) && my < top + itemH) {
+        this.openChatRoom(i);
+        return;
+      }
     }
   }
 
   handleChatRoomClick(mx, my) {
-    if (mx < 52 && my < 60) { this.ui.currentScreen = "dmList"; return; }
-    let inputH = 60, y = this.ui.h - inputH;
+    if (mx < 52 && my < 60) {
+      this.ui.currentScreen = "dmList";
+      return;
+    }
+
+    if (this.handleDayZeroVideoMessageClick(mx, my)) {
+      return;
+    }
+
+    let inputH = 60;
+    let y = this.ui.h - inputH;
+
     if (my > y) {
       if (mx > this.ui.w - 72) {
         let t = this.chatInputText.trim();
-        if (t.length) this.sendMessage(t);
+
+        if (t.length) {
+          this.sendMessage(t);
+        }
       }
     }
+  }
+
+  handleDayZeroVideoMessageClick(mx, my) {
+    if (
+      typeof dateManager === "undefined" ||
+      !dateManager ||
+      dateManager.currentDay !== 0
+    ) {
+      return false;
+    }
+
+    if (typeof startDayZeroReplayVideo !== "function") {
+      return false;
+    }
+
+    let room = this.room();
+
+    if (!room || !room.messages) {
+      return false;
+    }
+
+    let layout = this.layoutChatMessages();
+    let baseY = 70 + 6 - this.chatScrollY;
+    let avatarSlot = layout.avatarSlot || 36;
+
+    for (let it of layout.items) {
+      if (it.type !== "bubble") continue;
+      if (!it.rawText || it.rawText.indexOf("▶영상 보기") === -1) continue;
+
+      let y = baseY + it.top;
+      let bx = it.sent ? this.ui.w - 15 - it.bw : 15 + avatarSlot;
+
+      if (mx >= bx && mx <= bx + it.bw && my >= y && my <= y + it.bh) {
+        startDayZeroReplayVideo();
+        return true;
+      }
+    }
+
+    return false;
   }
 
   resolveUser(userOrKey) {
     if (!userOrKey) return null;
 
-    // 이미 User 객체가 들어온 경우
-    if (typeof userOrKey === "object" && typeof userOrKey.displayProfile === "function") {
+    if (
+      typeof userOrKey === "object" &&
+      typeof userOrKey.displayProfile === "function"
+    ) {
       return userOrKey;
     }
 
-    // "최지안" 같은 문자열 키가 들어온 경우
     if (typeof userOrKey === "string") {
       if (
         typeof dateManager !== "undefined" &&
@@ -236,11 +345,14 @@ class InstagramDM {
 
   getRoomMembers(room) {
     let raw = room.users || room.members || [];
-
     let members = [];
+
     for (let i = 0; i < raw.length; i++) {
       let u = this.resolveUser(raw[i]);
-      if (u) members.push(u);
+
+      if (u) {
+        members.push(u);
+      }
     }
 
     return members;
@@ -249,11 +361,11 @@ class InstagramDM {
   normalizeChatRoom(room) {
     if (!room.messages) room.messages = [];
 
-    // 단체 채팅 멤버 이름 자동 생성
     if (room.isGroup && !room.memberNames) {
       room.memberNames = [];
 
       let raw = room.users || room.members || [];
+
       for (let i = 0; i < raw.length; i++) {
         if (typeof raw[i] === "string") {
           room.memberNames.push(raw[i]);
@@ -263,9 +375,9 @@ class InstagramDM {
       }
     }
 
-    // 메시지 기본 방향 정리
     for (let i = 0; i < room.messages.length; i++) {
       let m = room.messages[i];
+
       if (m.separator) continue;
 
       let hasSender =
@@ -274,12 +386,10 @@ class InstagramDM {
         m.senderName ||
         m.userKey;
 
-      // sent가 아예 없고, 보낸 유저도 없으면 플레이어 채팅으로 처리
       if (m.sent === undefined) {
         m.sent = !hasSender;
       }
 
-      // 보낸 유저가 있으면 상대방 채팅
       if (hasSender) {
         m.sent = false;
       }
@@ -302,7 +412,6 @@ class InstagramDM {
       m.senderName ||
       m.userKey;
 
-    // sent:true 이거나, 유저 정보가 없고 sent:false도 아니면 플레이어 채팅
     let isMine = m.sent === true || (!hasSender && m.sent !== false);
 
     if (isMine) {
@@ -315,6 +424,7 @@ class InstagramDM {
     }
 
     let senderKey = m.sender || m.senderName || m.userKey || "";
+
     let user =
       this.resolveUser(m.user) ||
       this.resolveUser(senderKey) ||
@@ -322,6 +432,7 @@ class InstagramDM {
       null;
 
     let info = null;
+
     if (this.ui && typeof this.ui.getSenderInfo === "function") {
       info = this.ui.getSenderInfo(senderKey);
     }
@@ -379,18 +490,19 @@ class InstagramDM {
     if (members.length === 0) {
       fill(90);
       circle(x, y, sz * 0.82);
+
       fill(255);
       textAlign(CENTER, CENTER);
       textStyle(BOLD);
       textSize(sz * 0.35);
       text(room.name ? room.name.charAt(0) : "G", x, y + 1);
       textStyle(NORMAL);
+
       return;
     }
 
     let count = min(members.length, 4);
     let d = count === 1 ? sz * 0.82 : sz * 0.55;
-
     let positions = [];
 
     if (count === 1) {
@@ -418,7 +530,6 @@ class InstagramDM {
     for (let i = 0; i < count; i++) {
       let p = positions[i];
 
-      // 프로필 사이에 테두리처럼 보이게 배경 원 먼저 그림
       noStroke();
       fill(20);
       circle(p.x, p.y, d + 4);
@@ -429,6 +540,7 @@ class InstagramDM {
     if (members.length > 4) {
       fill(0, 170);
       circle(x + sz * 0.22, y + sz * 0.22, d);
+
       fill(255);
       textAlign(CENTER, CENTER);
       textSize(10);
@@ -450,6 +562,7 @@ class InstagramDM {
     }
 
     let c = room.avatarColor || [110, 110, 110];
+
     noStroke();
     fill(c[0], c[1], c[2]);
     circle(x, y, sz);
@@ -463,68 +576,118 @@ class InstagramDM {
   }
 
   displayDMList(appMouse) {
-    const w = this.ui.w, h = this.ui.h;
+    const w = this.ui.w;
+    const h = this.ui.h;
 
     push();
     drawingContext.save();
     this.ui.createRectClip(0, 112, w, h - 112);
 
     if (this.chatRooms.length === 0) {
-      noStroke(); fill(160);
-      textAlign(CENTER, CENTER); textStyle(BOLD); textSize(16);
+      noStroke();
+      fill(160);
+      textAlign(CENTER, CENTER);
+      textStyle(BOLD);
+      textSize(16);
       text("아직 대화가 없어요", w / 2, h / 2 - 14);
-      fill(110); textStyle(NORMAL); textSize(12.5);
+
+      fill(110);
+      textStyle(NORMAL);
+      textSize(12.5);
       text("새 메시지가 오면 여기에 표시됩니다", w / 2, h / 2 + 10);
     } else {
       let topY = 112 - this.dmScrollY;
+
       for (let i = 0; i < this.chatRooms.length; i++) {
         let y = topY + i * 72;
+
         if (y > h || y + 72 < 100) continue;
+
         this.drawDMRoom(this.chatRooms[i], y, 72, appMouse);
       }
     }
+
     drawingContext.restore();
     pop();
 
     // 상단 헤더
-    fill(20); noStroke();
+    fill(20);
+    noStroke();
     rect(0, 0, w, 112, 25, 25, 0, 0);
 
     let backHover = appMouse && dist(appMouse.x, appMouse.y, 24, 30) < 22;
-    stroke(255); strokeWeight(2.4); noFill(); strokeJoin(ROUND); strokeCap(ROUND);
-    push(); translate(22, 30); if (backHover) scale(1.15);
-    line(6, -8, -4, 0); line(-4, 0, 6, 8);
+
+    stroke(255);
+    strokeWeight(2.4);
+    noFill();
+    strokeJoin(ROUND);
+    strokeCap(ROUND);
+
+    push();
+    translate(22, 30);
+    if (backHover) scale(1.15);
+    line(6, -8, -4, 0);
+    line(-4, 0, 6, 8);
     pop();
 
     let myName =
-      (this.ui && typeof this.ui.getCurrentAccountName === "function")
+      this.ui && typeof this.ui.getCurrentAccountName === "function"
         ? this.ui.getCurrentAccountName()
-        : (this.ui.currentAccount === "main" ? "주인공" : "last.frame_");
-    noStroke(); fill(255);
-    textAlign(LEFT, CENTER); textStyle(BOLD); textSize(19);
+        : this.ui.currentAccount === "main"
+          ? "주인공"
+          : "last.frame_";
+
+    noStroke();
+    fill(255);
+    textAlign(LEFT, CENTER);
+    textStyle(BOLD);
+    textSize(19);
     text(myName, 50, 30);
+
     let nameW = textWidth(myName);
-    stroke(255); strokeWeight(2); noFill();
+
+    // 계정 전환 화살표는 1~4일차 모두 기존 모양 유지.
+    // 1~3일차에는 클릭 시 "자취방이라 인터넷이 잘 안되네" 독백만 출력됨.
+    stroke(255);
+    strokeWeight(2);
+    noFill();
     line(50 + nameW + 9, 27, 50 + nameW + 14, 32);
     line(50 + nameW + 14, 32, 50 + nameW + 19, 27);
 
-    stroke(255); strokeWeight(2); noFill(); strokeJoin(ROUND);
-    push(); translate(w - 28, 30);
+    stroke(255);
+    strokeWeight(2);
+    noFill();
+    strokeJoin(ROUND);
+
+    push();
+    translate(w - 28, 30);
     rect(-9, -9, 18, 18, 4);
     line(-1, 1, 6, -6);
     pop();
 
-    noStroke(); fill(38);
+    noStroke();
+    fill(38);
     rect(15, 64, w - 30, 34, 12);
-    push(); translate(34, 81);
-    stroke(150); strokeWeight(2); noFill();
-    circle(0, 0, 11); line(4, 4, 8, 8);
+
+    push();
+    translate(34, 81);
+    stroke(150);
+    strokeWeight(2);
+    noFill();
+    circle(0, 0, 11);
+    line(4, 4, 8, 8);
     pop();
-    noStroke(); fill(140);
-    textAlign(LEFT, CENTER); textStyle(NORMAL); textSize(13);
+
+    noStroke();
+    fill(140);
+    textAlign(LEFT, CENTER);
+    textStyle(NORMAL);
+    textSize(13);
     text("검색", 50, 82);
 
-    stroke(45); strokeWeight(1); line(0, 112, w, 112);
+    stroke(45);
+    strokeWeight(1);
+    line(0, 112, w, 112);
 
     this.drawAccountSwitcher(appMouse);
     this.drawPasswordPrompt(appMouse);
@@ -534,6 +697,7 @@ class InstagramDM {
     if (this.ui && typeof this.ui.getCurrentAccountName === "function") {
       return this.ui.getCurrentAccountName();
     }
+
     return this.ui.currentAccount === "main" ? "주인공" : "last.frame_";
   }
 
@@ -541,6 +705,11 @@ class InstagramDM {
     if (this.ui && typeof this.ui.getPlayerAccountName === "function") {
       return this.ui.getPlayerAccountName();
     }
+
+    if (typeof getPlayerInstagramId === "function") {
+      return getPlayerInstagramId();
+    }
+
     return "주인공";
   }
 
@@ -548,10 +717,29 @@ class InstagramDM {
     if (this.ui && typeof this.ui.getSubAccountName === "function") {
       return this.ui.getSubAccountName();
     }
+
     return "last.frame_";
   }
 
-  isAccountNameClicked(mx, my) {
+  isAccountSwitchUnlocked() {
+    if (typeof dateManager === "undefined" || !dateManager) return false;
+
+    // 4일차부터 계정 전환 가능.
+    // 0일차는 엔딩 이후 루프 구간이므로 계속 허용.
+    return dateManager.currentDay === 0 || dateManager.currentDay >= 4;
+  }
+
+  isSubAccountSwitchUnlocked() {
+    return this.isAccountSwitchUnlocked();
+  }
+
+  showAccountSwitchLockedMonologue() {
+    if (typeof monologue !== "undefined" && monologue) {
+      monologue.start("자취방이라 인터넷이 잘 안되네");
+    }
+  }
+
+  isAccountNameAreaClicked(mx, my) {
     if (my < 8 || my > 54 || mx < 48) return false;
 
     push();
@@ -560,11 +748,16 @@ class InstagramDM {
     let nameW = textWidth(this.getDisplayedAccountName());
     pop();
 
-    return mx <= 50 + nameW + 40;
+    return mx <= 50 + nameW + 130;
+  }
+
+  isAccountNameClicked(mx, my) {
+    return this.isAccountNameAreaClicked(mx, my);
   }
 
   getAccountSwitcherLayout() {
     let sheetH = 258;
+
     return {
       x: 0,
       y: this.ui.h - sheetH,
@@ -574,11 +767,72 @@ class InstagramDM {
     };
   }
 
+  switchToMainAccount() {
+    if (!this.ui) return;
+
+    this.ui.currentAccount = "main";
+    this.accountSwitcherOpen = false;
+    this.passwordPromptOpen = false;
+    this.closePasswordPromptWhenMonoEnds = false;
+
+    this.dmTargetScrollY = 0;
+    this.dmScrollY = 0;
+
+    if (typeof this.ui.targetScrollY !== "undefined") {
+      this.ui.targetScrollY = 0;
+    }
+
+    if (typeof this.ui.scrollY !== "undefined") {
+      this.ui.scrollY = 0;
+    }
+  }
+
+  switchToSubAccount() {
+    if (!this.ui) return;
+
+    this.ui.currentAccount = "sub";
+    this.accountSwitcherOpen = false;
+    this.passwordPromptOpen = false;
+    this.closePasswordPromptWhenMonoEnds = false;
+
+    this.dmTargetScrollY = 0;
+    this.dmScrollY = 0;
+
+    if (typeof this.ui.targetScrollY !== "undefined") {
+      this.ui.targetScrollY = 0;
+    }
+
+    if (typeof this.ui.scrollY !== "undefined") {
+      this.ui.scrollY = 0;
+    }
+
+    if (
+      typeof dateManager !== "undefined" &&
+      dateManager &&
+      !dateManager.subAccountSwitchMonologuePlayed &&
+      typeof monologue !== "undefined" &&
+      monologue
+    ) {
+      monologue.start("부계정으로 전환됐다. 이 안에 뭔가 남아있을지도 모른다.");
+      dateManager.subAccountSwitchMonologuePlayed = true;
+    }
+  }
+
   handleAccountSwitcherClick(mx, my) {
+    if (!this.isAccountSwitchUnlocked()) {
+      this.accountSwitcherOpen = false;
+      this.showAccountSwitchLockedMonologue();
+      return true;
+    }
+
     let layout = this.getAccountSwitcherLayout();
 
-    // 시트 바깥을 누르면 닫기
-    if (mx < layout.x || mx > layout.x + layout.w || my < layout.y || my > layout.y + layout.h) {
+    if (
+      mx < layout.x ||
+      mx > layout.x + layout.w ||
+      my < layout.y ||
+      my > layout.y + layout.h
+    ) {
       return false;
     }
 
@@ -586,13 +840,12 @@ class InstagramDM {
     let secondRowY = firstRowY + layout.rowH;
 
     if (my >= firstRowY && my < firstRowY + layout.rowH) {
-      this.ui.currentAccount = "main";
-      this.accountSwitcherOpen = false;
+      this.switchToMainAccount();
       return true;
     }
 
     if (my >= secondRowY && my < secondRowY + layout.rowH) {
-      this.openSubAccountPasswordPrompt();
+      this.switchToSubAccount();
       return true;
     }
 
@@ -603,6 +856,7 @@ class InstagramDM {
     if (typeof dateManager !== "undefined" && dateManager && dateManager.users) {
       return dateManager.users["주인공"] || null;
     }
+
     return null;
   }
 
@@ -610,23 +864,29 @@ class InstagramDM {
     if (typeof dateManager !== "undefined" && dateManager && dateManager.users) {
       return dateManager.users["부계"] || dateManager.users["의문의_X"] || null;
     }
+
     return null;
   }
 
   openSubAccountPasswordPrompt() {
-    this.accountSwitcherOpen = false;
-    this.passwordPromptOpen = true;
-    this.closePasswordPromptWhenMonoEnds = true;
-    this.ui.currentAccount = "main";
-    this.ui.currentScreen = "dmList";
-
-    if (typeof monologue !== "undefined" && monologue) {
-      monologue.start("비밀번호가 뭐지...? 아니 무엇보다 이 계정이 왜 내 폰에 로그인 되어있는거야?");
+    if (!this.isAccountSwitchUnlocked()) {
+      this.accountSwitcherOpen = false;
+      this.passwordPromptOpen = false;
+      this.closePasswordPromptWhenMonoEnds = false;
+      this.showAccountSwitchLockedMonologue();
+      return;
     }
+
+    this.switchToSubAccount();
   }
 
   drawAccountSwitcher(appMouse) {
     if (!this.accountSwitcherOpen) return;
+
+    if (!this.isAccountSwitchUnlocked()) {
+      this.accountSwitcherOpen = false;
+      return;
+    }
 
     let layout = this.getAccountSwitcherLayout();
 
@@ -657,7 +917,7 @@ class InstagramDM {
       layout.w,
       layout.rowH,
       this.getPlayerAccountName(),
-      "현재 계정",
+      this.ui.currentAccount === "main" ? "현재 계정" : "주 계정",
       this.getPlayerAccountUser(),
       this.ui.currentAccount === "main",
       appMouse
@@ -669,28 +929,38 @@ class InstagramDM {
       layout.w,
       layout.rowH,
       this.getSubAccountName(),
-      "부계정",
+      this.ui.currentAccount === "sub" ? "현재 계정" : "부계정",
       this.getSubAccountUser(),
-      false,
+      this.ui.currentAccount === "sub",
       appMouse
     );
 
     stroke(45);
     strokeWeight(1);
-    line(18, layout.y + 72 + layout.rowH * 2 + 8, this.ui.w - 18, layout.y + 72 + layout.rowH * 2 + 8);
+    line(
+      18,
+      layout.y + 72 + layout.rowH * 2 + 8,
+      this.ui.w - 18,
+      layout.y + 72 + layout.rowH * 2 + 8
+    );
 
     fill(70, 130, 255);
     noStroke();
     textAlign(CENTER, BASELINE);
     textStyle(BOLD);
     textSize(14);
-    text("기존 계정으로 로그인", this.ui.w / 2, layout.y + layout.h - 32);
+    text("전환할 계정을 선택하세요", this.ui.w / 2, layout.y + layout.h - 32);
 
     textStyle(NORMAL);
   }
 
   drawAccountSwitcherRow(x, y, w, h, title, subtitle, user, selected, appMouse) {
-    let hover = appMouse && appMouse.x >= x && appMouse.x <= x + w && appMouse.y >= y && appMouse.y <= y + h;
+    let hover =
+      appMouse &&
+      appMouse.x >= x &&
+      appMouse.x <= x + w &&
+      appMouse.y >= y &&
+      appMouse.y <= y + h;
 
     if (hover) {
       noStroke();
@@ -707,6 +977,7 @@ class InstagramDM {
       noStroke();
       fill(55);
       circle(profileX, profileY, 42);
+
       fill(95);
       circle(profileX, profileY, 34);
     }
@@ -728,6 +999,7 @@ class InstagramDM {
       stroke(70, 130, 255);
       strokeWeight(2.2);
       circle(x + w - 34, profileY, 22);
+
       noStroke();
       fill(70, 130, 255);
       textAlign(CENTER, CENTER);
@@ -744,6 +1016,7 @@ class InstagramDM {
 
     const w = this.ui.w;
     const h = this.ui.h;
+
     let boxW = 300;
     let boxH = 190;
     let boxX = (w - boxW) / 2;
@@ -763,7 +1036,7 @@ class InstagramDM {
     textAlign(CENTER, BASELINE);
     textStyle(BOLD);
     textSize(18);
-    text("비밀번호 입력", w / 2, boxY + 42);
+    text("연결 오류", w / 2, boxY + 42);
 
     fill(165);
     textStyle(NORMAL);
@@ -779,42 +1052,62 @@ class InstagramDM {
     fill(120);
     textAlign(LEFT, CENTER);
     textSize(13);
-    text("비밀번호", boxX + 44, boxY + 110);
+    text("네트워크 확인 중...", boxX + 44, boxY + 110);
 
     fill(170);
     textAlign(CENTER, BASELINE);
     textSize(11);
-    text("로그인이 중단되었습니다", w / 2, boxY + 160);
+    text("잠시 후 다시 시도해 주세요", w / 2, boxY + 160);
   }
 
   drawDMRoom(room, y, itemH, appMouse) {
     const w = this.ui.w;
     let cy = y + itemH / 2;
-    let hover = appMouse && appMouse.y > Math.max(y, 112) && appMouse.y < y + itemH;
-    if (hover) { noStroke(); fill(255, 12); rect(0, y, w, itemH); }
+
+    let hover =
+      appMouse &&
+      appMouse.y > Math.max(y, 112) &&
+      appMouse.y < y + itemH;
+
+    if (hover) {
+      noStroke();
+      fill(255, 12);
+      rect(0, y, w, itemH);
+    }
 
     let ax = 42;
     this.drawChatAvatar(room, ax, cy, 52);
+
     if (room.active) {
-      noStroke(); fill(20); circle(ax + 18, cy + 17, 16);
-      fill(80, 220, 120); circle(ax + 18, cy + 17, 11);
+      noStroke();
+      fill(20);
+      circle(ax + 18, cy + 17, 16);
+
+      fill(80, 220, 120);
+      circle(ax + 18, cy + 17, 11);
     }
 
     let tx = ax + 40;
-    noStroke(); fill(255);
-    textAlign(LEFT, BASELINE); textSize(15);
+
+    noStroke();
+    fill(255);
+    textAlign(LEFT, BASELINE);
+    textSize(15);
     textStyle(room.unread ? BOLD : NORMAL);
     text(room.name, tx, cy - 2);
 
     let last = null;
+
     if (room.messages) {
       for (let i = room.messages.length - 1; i >= 0; i--) {
         if (room.messages[i].separator) continue;
-        last = room.messages[i]; break;
+        last = room.messages[i];
+        break;
       }
     }
-    
+
     let preview = "";
+
     if (last) {
       let msgInfo = this.getMessageInfo(last, room);
 
@@ -826,69 +1119,116 @@ class InstagramDM {
         preview = last.text;
       }
     }
-    if (preview.length > 22) preview = preview.slice(0, 22) + "…";
+
+    if (preview.length > 22) {
+      preview = preview.slice(0, 22) + "…";
+    }
 
     textSize(13);
     textStyle(room.unread ? BOLD : NORMAL);
     fill(room.unread ? 240 : 150);
     text(preview, tx, cy + 16);
+
     let pw = textWidth(preview);
-    textStyle(NORMAL); fill(120);
+
+    textStyle(NORMAL);
+    fill(120);
     text("  ·  " + room.time, tx + pw, cy + 16);
 
     if (room.unread) {
-      noStroke(); fill(40, 130, 255);
+      noStroke();
+      fill(40, 130, 255);
       circle(w - 28, cy, 11);
     } else {
-      push(); translate(w - 28, cy);
-      stroke(120); strokeWeight(1.6); noFill(); strokeJoin(ROUND);
+      push();
+      translate(w - 28, cy);
+
+      stroke(120);
+      strokeWeight(1.6);
+      noFill();
+      strokeJoin(ROUND);
+
       rect(-9, -5, 18, 13, 4);
       circle(0, 1.5, 7);
-      line(-4, -5, -2, -8); line(-2, -8, 2, -8); line(2, -8, 4, -5);
+
+      line(-4, -5, -2, -8);
+      line(-2, -8, 2, -8);
+      line(2, -8, 4, -5);
+
       pop();
     }
+
     textStyle(NORMAL);
 
-      if (room.active && !room.isGroup) {
-      noStroke(); fill(20); circle(ax + 18, cy + 17, 16);
-      fill(80, 220, 120); circle(ax + 18, cy + 17, 11);
+    if (room.active && !room.isGroup) {
+      noStroke();
+      fill(20);
+      circle(ax + 18, cy + 17, 16);
+
+      fill(80, 220, 120);
+      circle(ax + 18, cy + 17, 11);
     }
   }
 
-  // 💡 수학적으로 길이를 계산해 박스가 글씨를 완벽하게 감싸도록 폰트 환경 강제 초기화
   wrapText(str, maxW) {
     str = String(str);
+
     push();
-    textSize(14); textStyle(NORMAL); textFont("Arial");
-    let lines = [], cur = "", lastSpace = -1;
+    textSize(14);
+    textStyle(NORMAL);
+    textFont("Arial");
+
+    let lines = [];
+    let cur = "";
+    let lastSpace = -1;
+
     for (let i = 0; i < str.length; i++) {
       let ch = str[i];
-      if (ch === "\n") { lines.push(cur); cur = ""; lastSpace = -1; continue; }
+
+      if (ch === "\n") {
+        lines.push(cur);
+        cur = "";
+        lastSpace = -1;
+        continue;
+      }
+
       cur += ch;
-      if (ch === " ") lastSpace = cur.length - 1;
+
+      if (ch === " ") {
+        lastSpace = cur.length - 1;
+      }
+
       if (textWidth(cur) > maxW) {
-        if (lastSpace > 0) { 
-          lines.push(cur.slice(0, lastSpace)); 
-          cur = cur.slice(lastSpace + 1); 
-        } else { 
-          lines.push(cur.slice(0, -1)); 
-          cur = ch; 
+        if (lastSpace > 0) {
+          lines.push(cur.slice(0, lastSpace));
+          cur = cur.slice(lastSpace + 1);
+        } else {
+          lines.push(cur.slice(0, -1));
+          cur = ch;
         }
+
         lastSpace = -1;
       }
     }
-    if (cur.length) lines.push(cur);
-    if (!lines.length) lines.push("");
+
+    if (cur.length) {
+      lines.push(cur);
+    }
+
+    if (!lines.length) {
+      lines.push("");
+    }
+
     pop();
+
     return lines;
   }
 
-    layoutChatMessages() {
+  layoutChatMessages() {
     const w = this.ui.w;
     let room = this.room();
     let isGroup = room && room.isGroup;
 
-    // 1:1 채팅에서도 상대 프로필을 보여주기 위해 항상 왼쪽 아바타 공간 확보
     let avatarSlot = 36;
     let maxBubbleW = (w - avatarSlot) * 0.7;
 
@@ -907,7 +1247,7 @@ class InstagramDM {
     let items = [];
     let y = topPad;
     let prevKey = null;
-    let msgs = room.messages || [];
+    let msgs = room && room.messages ? room.messages : [];
 
     for (let i = 0; i < msgs.length; i++) {
       let m = msgs[i];
@@ -928,8 +1268,6 @@ class InstagramDM {
       let info = this.getMessageInfo(m, room);
       let key = info.sent ? "__me" : info.name;
       let sameAsPrev = key === prevKey;
-
-      // 단체 채팅에서는 상대방 이름 표시
       let showName = isGroup && !info.sent && !sameAsPrev;
 
       if (sameAsPrev) {
@@ -959,11 +1297,11 @@ class InstagramDM {
         color: info.color,
         sent: info.sent,
         lines,
+        rawText: m.text,
         bw,
         bh,
         top: y,
         showName,
-        // 모든 상대 메시지 옆에 프로필 표시
         showAvatar: !info.sent
       });
 
@@ -971,7 +1309,9 @@ class InstagramDM {
       prevKey = key;
     }
 
-    if (room.seen) y += 16;
+    if (room && room.seen) {
+      y += 16;
+    }
 
     return {
       items,
@@ -984,7 +1324,7 @@ class InstagramDM {
     };
   }
 
-   displayChatRoom(appMouse) {
+  displayChatRoom(appMouse) {
     const w = this.ui.w;
     const h = this.ui.h;
 
@@ -1020,6 +1360,7 @@ class InstagramDM {
         textStyle(NORMAL);
         textSize(11);
         text(it.text, w / 2, y + it.height / 2);
+
         continue;
       }
 
@@ -1029,7 +1370,6 @@ class InstagramDM {
 
       if (y > h || y + it.bh < headerH) continue;
 
-      // 단체 채팅에서 이름 표시
       if (it.showName) {
         noStroke();
         fill(it.color[0], it.color[1], it.color[2]);
@@ -1044,11 +1384,9 @@ class InstagramDM {
       noStroke();
 
       if (it.sent) {
-        // 플레이어 말풍선
         bx = w - 15 - it.bw;
         fill(70, 120, 245);
       } else {
-        // 상대방 말풍선
         bx = 15 + avatarSlot;
         fill(48);
       }
@@ -1065,7 +1403,6 @@ class InstagramDM {
         text(it.lines[li], bx + padX, centerY - 1.5);
       }
 
-      // 상대 메시지 옆 프로필
       if (it.showAvatar) {
         let cax = 15 + 13;
         let cay = y + it.bh - 13;
@@ -1073,7 +1410,7 @@ class InstagramDM {
       }
     }
 
-    let allMsgs = this.room().messages || [];
+    let allMsgs = this.room() && this.room().messages ? this.room().messages : [];
     let lastRealMsg = null;
 
     for (let i = allMsgs.length - 1; i >= 0; i--) {
@@ -1083,7 +1420,13 @@ class InstagramDM {
       }
     }
 
-    if (this.room().seen && lastSent && lastRealMsg && this.getMessageInfo(lastRealMsg, this.room()).sent) {
+    if (
+      this.room() &&
+      this.room().seen &&
+      lastSent &&
+      lastRealMsg &&
+      this.getMessageInfo(lastRealMsg, this.room()).sent
+    ) {
       noStroke();
       fill(150);
       textAlign(RIGHT, TOP);
@@ -1102,26 +1445,48 @@ class InstagramDM {
   drawChatHeader(appMouse, headerH) {
     const w = this.ui.w;
     let room = this.room();
-    fill(20); noStroke();
+
+    fill(20);
+    noStroke();
     rect(0, 0, w, headerH, 25, 25, 0, 0);
 
     let backHover = appMouse && dist(appMouse.x, appMouse.y, 20, 35) < 22;
-    stroke(255); strokeWeight(2.4); noFill(); strokeJoin(ROUND); strokeCap(ROUND);
-    push(); translate(20, 35); if (backHover) scale(1.15);
-    line(6, -8, -4, 0); line(-4, 0, 6, 8);
+
+    stroke(255);
+    strokeWeight(2.4);
+    noFill();
+    strokeJoin(ROUND);
+    strokeCap(ROUND);
+
+    push();
+    translate(20, 35);
+    if (backHover) scale(1.15);
+    line(6, -8, -4, 0);
+    line(-4, 0, 6, 8);
     pop();
 
-    this.drawChatAvatar(room, 56, 35, 38);
-    if (room.active && !room.isGroup) {
-      noStroke(); fill(20); circle(56 + 13, 35 + 13, 12);
-      fill(80, 220, 120); circle(56 + 13, 35 + 13, 8);
+    if (room) {
+      this.drawChatAvatar(room, 56, 35, 38);
     }
 
-    noStroke(); fill(255);
-    textAlign(LEFT, BASELINE); textStyle(BOLD); textSize(15);
-        let memberCount = 0;
+    if (room && room.active && !room.isGroup) {
+      noStroke();
+      fill(20);
+      circle(56 + 13, 35 + 13, 12);
 
-    if (room.isGroup) {
+      fill(80, 220, 120);
+      circle(56 + 13, 35 + 13, 8);
+    }
+
+    noStroke();
+    fill(255);
+    textAlign(LEFT, BASELINE);
+    textStyle(BOLD);
+    textSize(15);
+
+    let memberCount = 0;
+
+    if (room && room.isGroup) {
       memberCount = this.getRoomMembers(room).length;
 
       if (memberCount === 0 && room.memberNames) {
@@ -1129,77 +1494,136 @@ class InstagramDM {
       }
     }
 
-    let hasSub = (room.active && !room.isGroup) || (room.isGroup && memberCount > 0);
+    let hasSub = room && ((room.active && !room.isGroup) || (room.isGroup && memberCount > 0));
 
-    text(room.name, 84, hasSub ? 32 : 40);
+    text(room ? room.name : "", 84, hasSub ? 32 : 40);
 
-    if (room.active && !room.isGroup) {
+    if (room && room.active && !room.isGroup) {
       fill(150);
       textStyle(NORMAL);
       textSize(11);
       text(room.activeText || "활동 중", 84, 48);
-    } else if (room.isGroup && memberCount > 0) {
+    } else if (room && room.isGroup && memberCount > 0) {
       fill(150);
       textStyle(NORMAL);
       textSize(11);
       text(memberCount + "명", 84, 48);
     }
 
-    stroke(255); strokeWeight(2); noFill(); strokeJoin(ROUND);
-    push(); translate(w - 92, 35); rectMode(CENTER);
-    rect(0, 0, 13, 19, 3); line(-3, 7, 3, 7);
-    pop();
-    rectMode(CORNER);
-    push(); translate(w - 56, 35);
-    rect(-9, -6, 13, 12, 3);
-    noStroke(); fill(255); triangle(5, -4, 5, 4, 10, 0);
-    pop();
-    stroke(255); strokeWeight(2); noFill();
-    push(); translate(w - 22, 35);
-    circle(0, 0, 18);
-    noStroke(); fill(255);
-    circle(0, -4, 2.4); rect(-1, -1, 2, 8, 1);
+    stroke(255);
+    strokeWeight(2);
+    noFill();
+    strokeJoin(ROUND);
+
+    push();
+    translate(w - 92, 35);
+    rectMode(CENTER);
+    rect(0, 0, 13, 19, 3);
+    line(-3, 7, 3, 7);
     pop();
 
-    stroke(45); strokeWeight(1); line(0, headerH, w, headerH);
+    rectMode(CORNER);
+
+    push();
+    translate(w - 56, 35);
+    rect(-9, -6, 13, 12, 3);
+    noStroke();
+    fill(255);
+    triangle(5, -4, 5, 4, 10, 0);
+    pop();
+
+    stroke(255);
+    strokeWeight(2);
+    noFill();
+
+    push();
+    translate(w - 22, 35);
+    circle(0, 0, 18);
+    noStroke();
+    fill(255);
+    circle(0, -4, 2.4);
+    rect(-1, -1, 2, 8, 1);
+    pop();
+
+    stroke(45);
+    strokeWeight(1);
+    line(0, headerH, w, headerH);
+
     textStyle(NORMAL);
   }
 
   drawChatInput(appMouse, inputH) {
-    const w = this.ui.w, h = this.ui.h;
-    let y = h - inputH;
-    fill(20); noStroke();
-    rect(0, y, w, inputH, 0, 0, 25, 25);
-    stroke(45); strokeWeight(1); line(0, y, w, y);
+    const w = this.ui.w;
+    const h = this.ui.h;
 
-    noStroke(); fill(60, 120, 255);
+    let y = h - inputH;
+
+    fill(20);
+    noStroke();
+    rect(0, y, w, inputH, 0, 0, 25, 25);
+
+    stroke(45);
+    strokeWeight(1);
+    line(0, y, w, y);
+
+    noStroke();
+    fill(60, 120, 255);
     circle(28, y + inputH / 2, 34);
-    stroke(255); strokeWeight(1.6); noFill(); strokeJoin(ROUND);
-    push(); translate(28, y + inputH / 2);
-    rect(-7, -4, 14, 9, 3); circle(0, 1.5, 6);
-    line(-4, -4, -2, -7); line(-2, -7, 2, -7); line(2, -7, 4, -4);
+
+    stroke(255);
+    strokeWeight(1.6);
+    noFill();
+    strokeJoin(ROUND);
+
+    push();
+    translate(28, y + inputH / 2);
+    rect(-7, -4, 14, 9, 3);
+    circle(0, 1.5, 6);
+    line(-4, -4, -2, -7);
+    line(-2, -7, 2, -7);
+    line(2, -7, 4, -4);
     pop();
 
-    let px = 50, pw = w - 50 - 14, ph = 38, py = y + (inputH - ph) / 2;
-    noStroke(); fill(36);
+    let px = 50;
+    let pw = w - 50 - 14;
+    let ph = 38;
+    let py = y + (inputH - ph) / 2;
+
+    noStroke();
+    fill(36);
     rect(px, py, pw, ph, 19);
 
-    textAlign(LEFT, CENTER); textSize(14); textStyle(NORMAL);
-    let showCursor = (this.chatCursorBlink % 1000) < 500;
+    textAlign(LEFT, CENTER);
+    textSize(14);
+    textStyle(NORMAL);
+
+    let showCursor = this.chatCursorBlink % 1000 < 500;
+
     if (this.chatInputText.length) {
       let t = this.chatInputText;
-      while (textWidth(t) > pw - 70 && t.length) t = t.slice(1);
+
+      while (textWidth(t) > pw - 70 && t.length) {
+        t = t.slice(1);
+      }
+
       fill(255);
       text(t + (showCursor ? "|" : ""), px + 16, py + ph / 2 - 1);
+
       fill(70, 130, 255);
-      textAlign(RIGHT, CENTER); textStyle(BOLD);
+      textAlign(RIGHT, CENTER);
+      textStyle(BOLD);
       text("보내기", w - 22, py + ph / 2 - 1);
     } else {
       fill(130);
       text("메시지...", px + 16, py + ph / 2 - 1);
-      fill(255); textAlign(CENTER, CENTER); textSize(20); textStyle(NORMAL);
+
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(20);
+      textStyle(NORMAL);
       text("♡", w - 32, py + ph / 2);
     }
+
     textStyle(NORMAL);
   }
 
@@ -1213,7 +1637,11 @@ class InstagramDM {
 
     if (code === ENTER) {
       let t = this.chatInputText.trim();
-      if (t.length) this.sendMessage(t);
+
+      if (t.length) {
+        this.sendMessage(t);
+      }
+
       return true;
     }
 
@@ -1224,7 +1652,10 @@ class InstagramDM {
     if (this.ui.currentScreen !== "chatRoom") return false;
     if (!k || k.length !== 1) return false;
     if (k.charCodeAt(0) < 32) return false;
-    if (this.chatInputText.length >= 120) return true;
+
+    if (this.chatInputText.length >= 120) {
+      return true;
+    }
 
     this.chatInputText += k;
     return true;

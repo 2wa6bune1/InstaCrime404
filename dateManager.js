@@ -9,6 +9,16 @@ class DateManager {
     // 날짜별 독백 출력 여부 추적
     this.startMonologuePlayed = {}; 
     this.endMonologuePlayed = {};
+    // 4일차 스토리 업로드 루트 상태
+this.day4StoryUploadReady = false;
+this.day4StoryUploadHintPlayed = false;
+this.storyUploadResolved = false;
+this.uploadedToday = false;
+this.accusedSuspect = null;
+this.accuseResult = null;
+this.taggedTarget = null;
+this.taggedHandle = null;
+this.storyUploadResult = null;
     // 5일차 연출용
     this.day5StartFrame = 0;
     this.day5CameraTriggered = false;
@@ -30,19 +40,16 @@ class DateManager {
       },
       3: {
         start: "채팅이 온 것 같다. 그러고보니 서아가 죽고 침울해져서 한동안 우리끼리도 이야기를 나누지 않았었지.",
-        end: "수진이가 그동안 쓰던 줄 이어폰을 바꾼듯하다."
+        end: "그러고보니 지안이가 다녀온 맛집에 간 이유도, 정신을 잃었다가 그 근방에서 깨어나서였어."
       },
       4: {
-        start: "이게 뭐지...?",
+        start: "하은이한테는 말하지 못했지만... 정신병원에 다녀왔다.",
         end: "이제 누가 범인인지 알 것 같다. 더 이상 우리끼리 의심하는 일은 없었으면 해."
       },
-      5: {
-        start: "(독백을 채워넣으세요)",
-        end: "(독백을 채워넣으세요)"
-      },
+
       0: {
-        start: "(독백을 채워넣으세요)",
-        end: "(독백을 채워넣으세요)"
+        start: "이제 다시 내 시간인가...",
+        end: "서아랑 쓴 채팅방을 나가기만 하면... 이제 끝이다"
       }
     };
 
@@ -207,7 +214,6 @@ class DateManager {
       dailyStories.push(new Story(this.users["이서준"], seojun2_1));
       dailyStories.push(new Story(this.users["이서준"], seojun2_2, "", "friend"));
 
-      dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "아이돌 그룹 루미에, 정규 2집 컴백 예고", 178, color(20), news6));
       dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "부산 20대 대학생 살인사건, 교살 정확 확실. 흉기는 아직 발견되지 않아...", 241, color(20), news3));
       
       this.unlockedFeatures.chat = true;
@@ -313,7 +319,7 @@ class DateManager {
     }
     // ================= [ 3일차 ] =================
     else if (this.currentDay === 3) {
-      dailyStories.push(new Story(this.users["이서준"], seojun3));
+      dailyStories.push(new Story(this.users["이서준"], seojun3_v2));
       dailyStories.push(new Story(this.users["정수진"], sooah3));
       dailyStories.push(new Story(this.users["부계"], accountX3));
       dailyStories.push(new Story(this.users["강하은"], haeun3));
@@ -342,13 +348,16 @@ class DateManager {
           { separator: "오늘" },
           { text: "오늘은 좀 어때", sent: false },
           { text: "아직까진 아무 일도 없어.", sent: true },
-          { text: "신부님이 자세한 증상 설명해 달라는데", sent: false }
+          { text: "신부님이 자세한 증상 설명해 달라는데", sent: false },
+          { text: "한번에 한 두시간? 정도 기절하고.", sent: true },
+          { text: "기절할 때랑 다른 장소에서 깨어나는 것 같아.", sent: true },
+          { text: "악령이 들린거 아니야?", sent: false }
         ]
       });
 
       dailyChats.push({
         name: "최지안", user: this.users["최지안"], avatarColor: [90, 180, 180], active: false, unread: true, seen: false, time: "오늘",
-        monoText: "내가 언제 이런걸 친거지? 정말로 기억이 없다...",
+        monoText: "내가 언제 이런걸 친거지? 확실히 지안이가 올린건 다 내가 갔던 맛집들이지만... 정말로 기억이 없다...",
         messages: [
           { separator: "5일전" },
           { text: "야 너가 그 때 알려준 거 뭐였지?", sent: false },
@@ -454,7 +463,7 @@ class DateManager {
     }
         // ================= [ 4일차 ] =================
     else if (this.currentDay === 4) {
-      dailyStories.push(new Story(this.users["강하은"], haeun4));
+      dailyStories.push(new Story(this.users["강하은"], haeun4, "", "default", "오늘 서아의 장례식이 있었다."));
       dailyStories.push(new Story(this.users["최지안"], jian4_1));
       dailyStories.push(new Story(this.users["최지안"], jian4_2));
       dailyStories.push(new Story(this.users["최지안"], jian4_3));
@@ -466,7 +475,51 @@ class DateManager {
       
       dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "드라마 비밀의 도시 시청률 15% 돌파 ㄷㄷ \n@야 너도 이거 봐??", 75, color(20), news8));
       dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "국가대표 축구팀 극적 역전승, 8강 진출 미쳤다...", 739, color(20), news9));
+      dailyChats.push({
+        name: "정수진", user: this.users["최지안"], avatarColor: [90, 180, 180], active: false, unread: false, seen: true, time: "3일전",
+        messages: [
+          { separator: "어제" },
+          { text: "에어팟 어때?", sent: false },
+          { text: "이거 진짜 말 안돼", sent: true },
+          { text: "너도 그동안 줄 이어폰 썼잖아. 이김에 바꿔봐", sent: true },
+          { text: "그럴까... 나도 쓰던거 부산에서 잃어버린긴 했는데...", sent: false }
 
+        ]
+      });
+      
+      dailyChats.push({
+        name: "강하은",
+        user: this.users["강하은"],
+        avatarColor: [100, 100, 255],
+        active: false,
+        unread: true,
+        seen: false,
+        time: "어제",
+        messages: [
+          { separator: "일주일전" },
+          { text: "저번에 말했던 건 좀 괜찮아?", sent: false },
+          { text: "요즘은 좀 덜한거같은데... 여행 간 동안은 안그러겠지 ???", sent: true },
+          { text: "괜찮아", sent: false },
+          { text: "혹시 무슨 일 있으면 내가 막아줄게", sent: false },
+
+          { separator: "2일전" },
+          { text: "서아 죽고 나서 점점 심해지는거같아...", sent: true },
+          { text: "한동안 안그러다가 서아 죽은날부터 3일 연속으로 기절해.", sent: true },
+          { text: "우리 신부님이 도움 주실 수 있을거야", sent: false },
+          { text: "그 전까지는 나가지 말고 있어", sent: false },
+
+          { separator: "어제" },
+          { text: "오늘은 좀 어때", sent: false },
+          { text: "아직까진 아무 일도 없어.", sent: true },
+          { text: "신부님이 자세한 증상 설명해 달라는데", sent: false },
+          { text: "한번에 한 두시간? 정도 기절하고.", sent: true },
+          { text: "기절할 때랑 다른 장소에서 깨어나는 것 같아.", sent: true },
+          { text: "악령이 들린거 아니야?", sent: false }
+
+
+
+        ]
+      });
       dailyChats.push({
         name: "부산 여행",
         isGroup: true,
@@ -519,6 +572,8 @@ class DateManager {
         ]
       });
 
+      
+
       dailyChats.push({
         name: "정수진",
         user: this.users["정수진"],
@@ -553,36 +608,7 @@ class DateManager {
         ]
       });
 
-      dailyChats.push({
-        name: "강하은",
-        user: this.users["강하은"],
-        avatarColor: [100, 100, 255],
-        active: false,
-        unread: true,
-        seen: false,
-        time: "어제",
-        messages: [
-          { separator: "일주일전" },
-          { text: "저번에 말했던 건 좀 괜찮아?", sent: false },
-          { text: "요즘은 좀 덜한거같은데... 여행 간 동안은 안그러겠지 ???", sent: true },
-          { text: "괜찮아", sent: false },
-          { text: "혹시 무슨 일 있으면 내가 막아줄게", sent: false },
 
-          { separator: "2일전" },
-          { text: "서아 죽고 나서 점점 심해지는거같아...", sent: true },
-          { text: "한동안 안그러다가 서아 죽은날부터 3일 연속으로 기절해.", sent: true },
-          { text: "우리 신부님이 도움 주실 수 있을거야", sent: false },
-          { text: "그 전까지는 나가지 말고 있어", sent: false },
-
-          { separator: "어제" },
-          { text: "오늘은 좀 어때", sent: false },
-          { text: "아직까진 아무 일도 없어.", sent: true },
-          { text: "신부님이 자세한 증상 설명해 달라는데", sent: false },
-          { text: "한번에 한 두시간? 정도 기절하고.", sent: true },
-          { text: "기절할 때랑 다른 장소에서 깨어나는 것 같아.", sent: true },
-          { text: "악령이 들린거 아니야?", sent: false }
-        ]
-      });
 
       dailyChats.push({
         name: "최지안",
@@ -631,31 +657,21 @@ class DateManager {
         ]
       });
     }
-    // ================= [ 5일차 ] =================
-    else if (this.currentDay === 5) {
-      dailyStories.push(new Story(this.users["주인공"], "부계5.JPG"));
-      dailyStories.push(new Story(this.users["강하은"], "강하은5(수정예정).png"));
-      dailyStories.push(new Story(this.users["최지안"], color(255), "밤에 혼자 골목길 돌아다니지 마!"));
-      dailyStories.push(new Story(this.users["최지안"], color(255), "밤에 혼자 골목길 돌아다니지 마!"));
-      
-      dailyPosts.push(new Post(this.users["???"], "너의 등 뒤", "GAME OVER. 아무도 널 구하러 오지 않아.", 666, color(80, 0, 0)));
 
-      dailyChats.push({
-        name: "???", user: this.users["???"], avatarColor: [150, 0, 0], active: true, unread: true, seen: false, time: "지금",
-        messages: [{ text: "뒤돌아봐", sent: false }]
-      });
-    }
     // ================= [ 0일차 (루프) ] =================
     else if (this.currentDay === 0) {
-      dailyStories.push(new Story(this.users["주인공"], accountX0));
-      dailyStories.push(new Story(this.users["박서아"], color(0), "이번엔 다른 선택을 하길."));
-      dailyStories.push(new Story(this.users["박서아"], color(0), "이번엔 다른 선택을 하길."));
-      dailyStories.push(new Story(this.users["박서아"], color(0), "이번엔 다른 선택을 하길."));
-      dailyStories.push(new Story(this.users["박서아"], color(0), "이번엔 다른 선택을 하길."));
-      dailyStories.push(new Story(this.users["박서아"], color(0), "이번엔 다른 선택을 하길."));
-      dailyStories.push(new Story(this.users["최지안"], color(255), "밤에 혼자 골목길 돌아다니지 마!"));
-      
-      dailyPosts.push(new Post(this.users["SYSTEM"], "VOID", "루프가 초기화되었습니다. 기억을 잃지 마세요.", 0, color(0)));
+      dailyStories.push(new Story(this.users["부계"], accountX0, "", "default", "아까 부계정으로 올린 스토리... 잘 올라갔네"));
+
+            dailyStories.push(new Story(this.users["박서아"], seoah1));
+            dailyStories.push(new Story(this.users["박서아"], seoah2));
+            dailyStories.push(new Story(this.users["박서아"], seoah3));
+            dailyStories.push(new Story(this.users["박서아"], seoah4));
+            dailyStories.push(new Story(this.users["박서아"], seoah5));
+            dailyStories.push(new Story(this.users["박서아"], seoah6));
+
+      dailyPosts.push(new Post(this.users["daily_news"], "서울특별시", "아이돌 그룹 루미에, 정규 2집 컴백 예고", 178, color(20), news6));
+
+
       dailyChats.push({
         name: "박서아", user: this.users["박서아"], avatarColor: [255, 180, 100], active: false, unread: true, seen: false, time: "오늘",
         messages: [
@@ -664,9 +680,10 @@ class DateManager {
           { text: "이게 잘 안되는데 너가 제일 가까움 ㅠㅠ", sent: true },
           { text: "엉!", sent: false },
           { text: "어딘데?", sent: false },
-          { text: "(영상보기)", sent: true }
-        ]
+{ text: "▶영상 보기", sent: true, video: "endingVideo1" }        ]
       });
+            dailyStories.push(new Story(this.users["강하은"], haeun4));
+
 
       dailyChats.push({
         name: "지안이 깜짝생파 준비",
@@ -720,18 +737,33 @@ class DateManager {
     }
   }
 
-  advanceDay() {
-    this.currentDay++;
-    if(this.currentDay > 5) {
-      this.currentDay = 0; 
-    }
-    this.loadDailyData();
+advanceDay() {
+  this.currentDay++;
 
-    if (this.currentDay === 5) {
-      this.day5StartFrame = 0;
-      this.day5CameraTriggered = false;
-      this.day5EndingReady = false;
-      this.day5SequenceFinished = false;
-    }
+  // 4일차 이후 일반 날짜 전환은 바로 0일차로 이동.
+  if (this.currentDay > 4) {
+    this.currentDay = 0;
   }
+
+  this.day4StoryUploadUnlocked = false;
+  this.day4StoryUploadReady = false;
+  this.day4StoryUploadHintPlayed = false;
+  this.storyUploadResolved = false;
+  this.uploadedToday = false;
+  this.accusedSuspect = null;
+  this.accuseResult = null;
+  this.taggedTarget = null;
+  this.taggedHandle = null;
+  this.storyUploadResult = null;
+
+  this.loadDailyData();
+
+  if (typeof bgmManager !== "undefined" && bgmManager) {
+    bgmManager.playForDay(this.currentDay);
+  }
+
+  if (typeof startDayTransition === "function") {
+    startDayTransition(this.currentDay);
+  }
+}
 }

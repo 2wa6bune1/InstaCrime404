@@ -41,7 +41,6 @@ class Room {
     let sx, sy, sw, sh;
 
     if (imgRatio > canvasRatio) {
-      // 이미지가 캔버스보다 가로로 긴 경우: 좌우 crop
       sh = img.height;
       sw = img.height * canvasRatio;
 
@@ -50,7 +49,6 @@ class Room {
 
       sy = 0;
     } else {
-      // 이미지가 캔버스보다 세로로 긴 경우: 위아래 crop
       sw = img.width;
       sh = img.width / canvasRatio;
 
@@ -63,81 +61,135 @@ class Room {
     image(img, x, y, w, h, sx, sy, sw, sh);
   }
 
-  displayNextDayButton() {
-    // 독백 텍스트 상자가 떠 있을 때는 다음날 버튼 숨김
-    if (typeof monologue !== "undefined" && monologue.active) return;
+  getNextDayButtonBounds() {
+    return {
+      x: width - 230,
+      y: height - 85,
+      w: 190,
+      h: 55
+    };
+  }
 
-    // 인스타그램이 시작되기 전에는 버튼 숨김
+  displayNextDayButton() {
+    if (typeof monologue !== "undefined" && monologue.active) return;
     if (!instagramStarted) return;
 
-    // 5일차 엔딩 버튼과 겹치지 않도록 처리
+    // 0일차에는 다음날로 가기 버튼 삭제
+    if (dateManager && dateManager.currentDay === 0) return;
+
+    // 4일차에서 스토리 업로드가 열렸어도 버튼 이름을 바꾸지 않음.
+    // 대신 안내 패널만 보여줌.
     if (
       dateManager &&
-      (
-        dateManager.currentDay === 5 ||
-        dateManager.day5EndingReady
-      )
-    ) return;
+      dateManager.currentDay === 4 &&
+      (dateManager.day4StoryUploadUnlocked || dateManager.day4StoryUploadReady)
+    ) {
+      this.displayStoryUploadHint();
+      return;
+    }
 
-    let bx = width - 190;
-    let by = height - 85;
-    let bw = 150;
-    let bh = 55;
+    let b = this.getNextDayButtonBounds();
+    let isHover =
+      mouseX >= b.x &&
+      mouseX <= b.x + b.w &&
+      mouseY >= b.y &&
+      mouseY <= b.y + b.h;
 
-    fill(180, 45, 55);
+    drawingContext.save();
+    drawingContext.shadowColor = "rgba(0, 0, 0, 0.35)";
+    drawingContext.shadowBlur = isHover ? 24 : 14;
+    drawingContext.shadowOffsetY = 8;
+
     noStroke();
-    rect(bx, by, bw, bh, 12);
+    fill(isHover ? color(200, 56, 66) : color(180, 45, 55));
+    rect(b.x, b.y, b.w, b.h, 16);
+    drawingContext.restore();
+
+    stroke(255, 255, 255, isHover ? 90 : 45);
+    strokeWeight(1.1);
+    noFill();
+    rect(b.x, b.y, b.w, b.h, 16);
 
     fill(255);
+    noStroke();
     textAlign(CENTER, CENTER);
     textSize(17);
     textStyle(BOLD);
-    text("다음 날로 가기", bx + bw / 2, by + bh / 2);
+    text("다음 날로 가기", b.x + b.w / 2, b.y + b.h / 2);
+  }
+
+  displayStoryUploadHint() {
+    let panelW = 330;
+    let panelH = 64;
+    let panelX = width - panelW - 38;
+    let panelY = height - panelH - 30;
+
+    drawingContext.save();
+    drawingContext.shadowColor = "rgba(0, 0, 0, 0.45)";
+    drawingContext.shadowBlur = 22;
+    drawingContext.shadowOffsetY = 9;
+
+    noStroke();
+    fill(12, 14, 20, 225);
+    rect(panelX, panelY, panelW, panelH, 18);
+    drawingContext.restore();
+
+    stroke(255, 255, 255, 42);
+    strokeWeight(1);
+    noFill();
+    rect(panelX, panelY, panelW, panelH, 18);
+
+    noStroke();
+    fill(220, 42, 66);
+    circle(panelX + 34, panelY + panelH / 2, 22);
+
+    fill(255);
+    textAlign(LEFT, CENTER);
+    textSize(15);
+    textStyle(BOLD);
+    text("내 스토리를 눌러 범인을 태그하자", panelX + 58, panelY + 25);
+
+    fill(255, 155);
+    textSize(12);
+    textStyle(NORMAL);
+    text("인스타 상단의 내 스토리 버튼을 사용하세요", panelX + 58, panelY + 45);
   }
 
   displayEndingButton() {
-    if (typeof monologue !== "undefined" && monologue.active) return;
-
-    if (!dateManager || !dateManager.day5EndingReady) return;
-
-    fill(120, 20, 20);
-    rect(50, height - 100, 220, 50, 10);
-
-    fill(255);
-    textAlign(LEFT, BASELINE);
-    textSize(16);
-    text("사건의 전말 확인하기", 70, height - 70);
+    // 5일차 제거 후 사용하지 않음
   }
 
   checkClick(mx, my) {
-    // 독백 중에는 버튼 클릭 자체를 무시
     if (typeof monologue !== "undefined" && monologue.active) {
-      return false;
-    }
-
-    // 5일차 엔딩 버튼
-    if (dateManager && dateManager.day5EndingReady) {
-      if (mx > 50 && mx < 270 && my > height - 100 && my < height - 50) {
-        if (typeof startEndingVideo === "function") {
-          startEndingVideo();
-        }
-        return true;
-      }
       return false;
     }
 
     if (!instagramStarted) return false;
 
-    let bx = width - 230;
-    let by = height - 85;
-    let bw = 190;
-    let bh = 55;
+    // 0일차에는 다음날 버튼 클릭 없음
+    if (dateManager && dateManager.currentDay === 0) return false;
 
-    if (mx > bx && mx < bx + bw && my > by && my < by + bh) {
+    let b = this.getNextDayButtonBounds();
+
+    if (mx > b.x && mx < b.x + b.w && my > b.y && my < b.y + b.h) {
       if (!areAllCluesChecked()) {
         if (typeof monologue !== "undefined") {
           monologue.start("아직 확인할 게 남은 것 같다.");
         }
+        return true;
+      }
+
+      // 4일차에는 5일차로 넘어가지 않고 독백만 출력.
+      // 버튼 문구는 계속 "다음 날로 가기"로 유지.
+      if (dateManager && dateManager.currentDay === 4) {
+        dateManager.day4StoryUploadUnlocked = true;
+        dateManager.day4StoryUploadReady = true;
+        dateManager.day4StoryUploadHintPlayed = true;
+
+        if (typeof monologue !== "undefined") {
+          monologue.start("범인을 알 것 같아. 스토리를 활용해보자");
+        }
+
         return true;
       }
 

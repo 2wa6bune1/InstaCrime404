@@ -688,18 +688,27 @@ class InstagramUI {
     g.strokeWeight(1);
   }
 
-  changeAccount() {
-    if (this.currentAccount === "main") {
-      if (this.dm && typeof this.dm.openSubAccountPasswordPrompt === "function") {
-        this.dm.openSubAccountPasswordPrompt();
-      }
-    } else {
-      this.currentAccount = "main";
+changeAccount() {
+  if (this.currentAccount === "main") {
+    if (
+      this.dm &&
+      typeof this.dm.isSubAccountSwitchUnlocked === "function" &&
+      this.dm.isSubAccountSwitchUnlocked()
+    ) {
+      this.currentAccount = "sub";
+    } else if (
+      this.dm &&
+      typeof this.dm.openSubAccountPasswordPrompt === "function"
+    ) {
+      this.dm.openSubAccountPasswordPrompt();
     }
-
-    this.targetScrollY = 0;
-    this.scrollY = 0;
+  } else {
+    this.currentAccount = "main";
   }
+
+  this.targetScrollY = 0;
+  this.scrollY = 0;
+}
 
   getCurrentAccountUser() {
     if (typeof dateManager === "undefined" || !dateManager.users) return null;
