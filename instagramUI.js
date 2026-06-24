@@ -692,12 +692,6 @@ changeAccount() {
   if (this.currentAccount === "main") {
     if (
       this.dm &&
-      typeof this.dm.isSubAccountSwitchUnlocked === "function" &&
-      this.dm.isSubAccountSwitchUnlocked()
-    ) {
-      this.currentAccount = "sub";
-    } else if (
-      this.dm &&
       typeof this.dm.openSubAccountPasswordPrompt === "function"
     ) {
       this.dm.openSubAccountPasswordPrompt();
