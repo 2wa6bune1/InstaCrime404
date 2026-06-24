@@ -128,37 +128,37 @@ DM 읽기
 # 👤 인물
 
 ## 주인공
-![주인공](assets/주인공.png)
+<img src="assets/주인공.png" width="100">
 이중인격을 가진 대학생
 피해자 박서아와 친구로, 함께 부산 여행을 감
 박서아를 줄 이어폰으로 교살함
 
 ## 박서아 / @seoa.archive
-![박서아](assets/박서아.png)
+<img src="assets/박서아.png" width="100">
 부산이 고향인 대학생
 이번 연쇄 살인 사건의 피해자
 며칠 전 친구들과 함께 부산 여행을 다녀옴
 
 ## 최지안 / @its_ji.anni
-![최지안](assets/최지안.png)
+<img src="assets/최지안.png" width="100">
 박서아의 절친
 서아가 살해된 사건 당일이 생일이었음
 여러 지역의 맛집을 다니며 스토리를 올리는데, 모두 연쇄살인 지역과 겹침
 
 
 ## 정수진 / @su.zinni_
-![정수진](assets/정수진.png)
+<img src="assets/정수진.png" width="100">
 함께 부산 여행을 간 인물
 줄 이어폰을 쓰다가 최근 새 에어팟을 구매함
 
 ## 이서준 / @seo_jun.lee
-![이서준](assets/이서준.png)
+<img src="assets/이서준.png" width="100">
 피해자 박서아의 남자친구
 피해자와 가장 가까운 관계라 심증을 받지만 실질적인 물증은 없음
 서아가 죽은 후 친구들의 태도에 실망함
 
 ## 강하은 / @grace_haeun
-![강하은](assets/강하은.png)
+<img src="assets/강하은.png" width="100">
 종교에 심취해 포교를 시도하는 대학생
 
 ---
